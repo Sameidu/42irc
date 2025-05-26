@@ -13,13 +13,13 @@ Objetivos del proyecto:
 
 ## Compilación
 
-Clona el repositorio y ejecuta el Makefile:
-make
+### Clona el repositorio y ejecuta el Makefile:
+make; 
 El ejecutable se generará con el nombre ircserv
 
-Para compilar y ejecutar:
-make test → ejecuta ./ircserv 6667 password
-make test PORT=1234 PASS=hola123 → ejecuta ./ircserv 1234 hola123
+### Para compilar y ejecutar:
+- make test                         → ejecuta ./ircserv 6667 password
+- make test PORT=1234 PASS=hola123  → ejecuta ./ircserv 1234 hola123
 
 ## Ejecución
 

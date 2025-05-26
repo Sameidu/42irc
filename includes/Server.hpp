@@ -3,12 +3,7 @@
 #ifndef SERVER_HPP
 # define SERVER_HPP
 
-# include <iostream>
-# include <iomanip>
-# include <vector>
-# include <map>
-# include <algorithm>
-# include <string>
+# include "irc.hpp"
 
 class Server
 {

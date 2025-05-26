@@ -1,37 +1,26 @@
-#include <iostream>
-#include <cstdlib>
+#include "../includes/irc.hpp"
 
+int main(int ac, char** av) {
+	
+	if (ac != 3) {
+		std::cerr << "Usage: " << av[0] << " <port> <password>" << std::endl;
+		return 1;
+	}
 
-bool    isvalidPort(char *str_port)
-{
-    /* TODO: si le pasas 7643dsjfhd funciona ,
-     no se si habria que caparlo mas, por el atoi*/
-    int port = std::atoi(str_port);
+	int port = std::atoi(av[1]);
+	
+	if (port <= 0 || port > 65535) {
+		std::cerr << "Error: Port number must be between 1 and 65535." << std::endl;
+		return 1;
+	}
 
-    if(port <= 1024 || port > 65535)
-    {
-        std::cerr << "The port should be between 1025 and 65535." << std::endl;
-        return false;
-    }
-    /* TODO: guardar el valor */
-    return true;
-}
+	std::string password = av[2];
+	if (password.empty()) {
+		std::cerr << "Error: Password cannot be empty." << std::endl;
+		return 1;
+	}
 
+	std::cout << "Starting server on port " << port << " with password '" << password << "'." << std::endl;
 
-int main(int argc, char** argv) 
-{
-    if (argc != 3)
-    {
-        std::cerr << "Not a good argument please enter ./ircserv <port> <password>" << std::endl;
-        return 1;
-    }
-    std::cout << "Número de argumentos: " << argc << std::endl;
-    if (argv[1] && !isvalidPort(argv[1]))
-        return 1;
-
-    for (int i = 0; i < argc; ++i)
-        std::cout << "argv[" << i << "]: " << argv[i] << std::endl;
-
-
-    return 0;
+	return 0;
 }

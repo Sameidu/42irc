@@ -17,7 +17,9 @@ CFLAGS  = -Wall -Wextra -Werror -std=c++98
 
 VPATH = src:src
 
-SRC     =	main.cpp
+SRC     =	main.cpp \
+			Client.cpp \
+			Server.cpp
 
 OBJ_DIR = obj
 OBJ     = $(SRC:%.cpp=$(OBJ_DIR)/%.o)

@@ -33,4 +33,13 @@ El ejecutable se generará con el nombre ircserv
 
 ## Cosas por mejorar / pendientes
 
+## Cliente pendiente de valorar
+
+- hexchat
+- irssi
+
+### Conectarte a tu servidor con irssi
+
+- 
+
 

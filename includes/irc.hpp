@@ -10,4 +10,6 @@
 # include <algorithm>
 # include <string>
 
+# define MAX_BITS_MSG    512
+
 #endif 

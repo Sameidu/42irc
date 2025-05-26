@@ -98,3 +98,9 @@ Libera la memoria dinámica asignada. Es obligatorio llamarla una vez que hayas 
 ## fcntl
 
 ## poll
+
+## select()
+
+## kqueue()
+
+## epoll()

@@ -11,20 +11,23 @@ CLEAR   = \033[0m
 # ============================
 # 🔧 PROJECT CONFIG
 # ============================
-NAME    = ircserv
-CC      = c++
-CFLAGS  = -Wall -Wextra -Werror -std=c++98
+NAME    := ircserv
+OBJ_DIR := obj
+DIR_INCLUDES := includes
+CC      := c++
+CFLAGS  := -Wall -Wextra -Werror -std=c++98 -I$(DIR_INCLUDES) -g3 -fsanitize=address,leak,undefined
 
-VPATH = src:src
+VPATH := src:src
 
-SRC     =	main.cpp \
+SRC     :=	main.cpp \
 			Client.cpp \
 			Server.cpp
 
-OBJ_DIR = obj
-OBJ     = $(SRC:%.cpp=$(OBJ_DIR)/%.o)
+OBJ     := $(SRC:%.cpp=$(OBJ_DIR)/%.o)
 
-DEPS 	= $(wildcard includes/*.hpp)
+DEPS := includes/Client.hpp \
+       includes/Server.hpp \
+       includes/irc.hpp
 
 # ============================
 # 🧱 BUILD RULES

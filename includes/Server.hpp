@@ -22,7 +22,7 @@ class Server
  
 	public:
 
-		Server(char *port, char *password);
+		Server(const int &port, const std::string &password);
 		Server();
 		~Server();
 

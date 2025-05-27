@@ -1,28 +1,34 @@
 #include <irc.hpp>
 #include <Server.hpp>
 
-
-/* TODO: retornar el puerto o -1 si da error */
-bool	parseArgs(char** av)
+int	parseArgs(const std::string &port, const std::string &password) 
 {
-	int port = std::atoi(av[1]);
-	
-	/* TODO: atoi no parsea bien un int corregir*/
-	if (port <= 1024 || port > 65535) {
-		std::cerr << "Error: Port number must be between 1024 and 65535." << std::endl;
-		return false;
+	for (size_t i = 0; i < port.size(); ++i) {
+		if (!std::isdigit(port[i])) {
+			std::cerr << "Error: Port must be a unsigned number." << std::endl;
+			return -1;
+		}
+		if (port[i] == '0' && i == 0) {
+			std::cerr << "Error: Port cannot start with zero." << std::endl;
+			return -1;
+		}
+		if (i > 5) {
+			std::cerr << "Error: Port is too long." << std::endl;
+			return -1;
+		}
 	}
 
-	std::string password = av[2];
+	int check = std::atoi(port.c_str());
+	if (check <= 1024 || check > 65535) {
+		std::cerr << "Error: Port must be between 1024 and 65535." << std::endl;
+		return -1;
+	}
+
 	if (password.empty()) {
 		std::cerr << "Error: Password cannot be empty." << std::endl;
-		return false;
+		return -1;
 	}
-	else
-		std::cout << "Starting server on port " << port << " with password '" << password << "'." << std::endl;
-		return true;
-
-
+	return check;
 }
 
 int main(int ac, char** av) {
@@ -32,12 +38,13 @@ int main(int ac, char** av) {
 		return 1;
 	}
 
-
-	if (!parseArgs(av))
+	int port;
+	if ((port = parseArgs(av[1], av[2])) == -1) 
 		return 1;
-	
+
+	std::cout << "Starting server on port " << port << " with password '" << av[2] << "'." << std::endl;
 	/* TODO: pasar un int */
-	Server	Server(av[1], av[2]);
+	Server	Server(port, av[2]);
 
 	return 0;
 }

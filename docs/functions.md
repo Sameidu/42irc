@@ -47,6 +47,8 @@ Realiza la resolución de un nombre de host (como "localhost" o "www.example.com
 - *h_addr_list*: lista de direcciones.
 
 ## getaddrinfo
+> include <netdb.h>
+
 Realiza la resolución de nombres de dominio y servicios en direcciones IP y crea una lista de estructuras <ins>sockaddr</ins>. Reemplaza a funciones obsoletas como gethostbyname y getservbyname, y es compatible con IPv4 e IPv6.
 
 - *ai_flags*: Opciones de configuración.
@@ -64,43 +66,72 @@ Realiza la resolución de nombres de dominio y servicios en direcciones IP y cre
 Libera la memoria dinámica asignada. Es obligatorio llamarla una vez que hayas terminado de usar la lista de resultados devuelta por <ins>*getaddrinfo*</ins>, para evitar fugas de memoria. No cierra sockets ni libera ningún otro recurso.
 
 ## bind
+> include <sys/socket.h>
+> include <netinet/in.h>
+
+Asocia un socket con una dirección local (IP y puerto). Es necesario antes de escuchar conexiones entrantes en un servidor.
 
 ## connect
+> include <sys/socket.h>
+> include <netinet/in.h>
+
+Establece una conexión con un socket remoto.
 
 ## listen
+> include <sys/socket.h>
+
+Marca un socket como pasivo, es decir, preparado para aceptar conexiones entrantes. Se usa después de <ins>*bind()*</ins>.
 
 ## accept
+> include <>
 
 ## htons
+> include <>
 
 ## htonl
+> include <>
 
 ## ntohs
+> include <>
 
 ## ntohl
+> include <>
 
 ## inet_addr
+> include <>
 
 ## inet_ntoa
+> include <>
 
 ## send
+> include <>
 
 ## recv
+> include <>
 
 ## signal
+> include <>
 
 ## sigaction
+> include <>
 
 ## lseek
+> include <>
 
 ## fstat
+> include <>
 
 ## fcntl
+> include <>
 
 ## poll
+> include <>
 
-## select()
+## select
+> include <>
 
-## kqueue()
+## kqueue
+> include <>
 
-## epoll()
+## epoll
+> include <>

@@ -11,21 +11,27 @@ class Channel;
 class Server
 {
 	private:
-		std::map <std::string, Client *>	_clients;
 		int									_port;
 		std::string							_password;
-		/* TODO: chanels pendiente valorar si es util o no*/
-		/* TODO: crear clase channel*/
+		std::map <std::string, Client *>	_clients;
 		std::map <std::string, Channel *>	_channel;
+
 		Server(const Server &other);
 		Server &operator=(const Server &other);
+		Server();
  
 	public:
 
 		Server(const int &port, const std::string &password);
-		Server();
 		~Server();
 
+		// Getters
+		const int &getPort() const;
+		const std::string &getPassword() const;
+
+		// Setters
+		void setPort(const int &port);
+		void setPassword(const std::string &password);
 };
 
 #endif

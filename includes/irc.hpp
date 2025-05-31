@@ -12,4 +12,7 @@
 
 # define MAX_BITS_MSG    512
 
+/* UTILS */
+bool	setNonBlocking(int fd);
+
 #endif 

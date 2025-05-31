@@ -1,16 +1,28 @@
 # FUNCIONES PERMITIDAS
 
+-> https://hyjae.gitbooks.io/socket-programming/content/
+
 ## socket
 > include <sys/socket.h>
 
 Crea un nuevo descriptor de socket, que permite establecer una comunicación entre procesos a través de redes. Este descriptor se comporta como un archivo y puede usarse para leer, escribir y cerrar conexiones.
+
+- Estructura de direccion del socket:
+
+struct sockaddr_in {
+    short sin_family;
+    unsigned short sin_port; // Port Number
+    struct in_addr sin_addr; // IP Address
+    char sin_zero[8];
+}
 
 ## close
 > include <unistd.h>
 
 Cierra un descriptor de archivo o socket abierto, liberando los recursos asociados. Debe usarse siempre al terminar comunicación o producirse un error.
 
-## setsockopt
+## setsockopt 
+https://pubs.opengroup.org/onlinepubs/000095399/functions/setsockopt.html
 > include <sys/socket.h>
 
 Permite establecer opciones de configuración en un socket, como permitir la reutilización de direcciones, establecer tiempos de espera o activar opciones de bajo nivel del protocolo.
@@ -18,6 +30,21 @@ Permite establecer opciones de configuración en un socket, como permitir la reu
 - Ajustar tamaño de buffers
 - Configurar keep-alive
 - Habilitar opciones TCP especificas
+
+Cuando cierras un socket servidor, el sistema lo deja en un estado llamado TIME_WAIT durante un tiempo (unos minutos), para asegurarse de que no haya paquetes retrasados pululando por la red.
+Durante ese tiempo, si intentas hacer un nuevo bind() al mismo puerto, el sistema te dirá: "no puedes, ya está en uso"
+Si vuelves ha hacer bind(), te fallara por que el sistema dira que ya esta en uso ese puerto
+
+Con la funcion setsockopt y la opcion SO_REUSEADDR le dice al sistema operativo que le deje usar ese puerto aun que este ocupado, y que te haces cargo de ello
+Si ejecutas el server lo detienes y lo vuelves a lanzar , o aun hay clientes conectados a ese puerto fallara
+
+int opt = 1;
+setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+
+- The level argument specifies the protocol level at which the option resides. 
+To set options at the socket level, specify the level argument as SOL_SOCKET.
+- SO_REUSEADDR: Specifies that the rules used in validating addresses supplied to bind() should allow reuse of local addresses, 
+if this is supported by the protocol. This option takes an int value. This is a Boolean option.
 
 ## getsockname
 > include <sys/socket.h>
@@ -88,8 +115,12 @@ Marca un socket como pasivo, es decir, preparado para aceptar conexiones entrant
 ## htons
 > include <>
 
+htons - Abrieviatura de host a red
+
 ## htonl
 > include <>
+
+htonl - Abreviatura de host a red larga
 
 ## ntohs
 > include <>
@@ -122,13 +153,56 @@ Marca un socket como pasivo, es decir, preparado para aceptar conexiones entrant
 > include <>
 
 ## fcntl
-> include <>
+https://pubs.opengroup.org/onlinepubs/007904975/functions/fcntl.html
+> include <fcntl.h>
+
+En nuestro caso lo usaremos para modificar las flags del archivo a O_NONBLOCK
+con F_GETFD para conseguirlas y F_SETFD para modificarlas
+Sirve para:
+- Manipular descriptores de archivos (como sockets o archivos abiertos).
+- Cambiar o leer opciones y propiedades asociadas a esos descriptores.
+
+int fcntl(int fd, int cmd, ... /* arg */ );
+- fd: el descriptor de archivo (ej: un socket).
+- cmd: qué operación quieres hacer.
+- arg: argumento adicional (depende del comando).
 
 ## poll
-> include <>
+https://pubs.opengroup.org/onlinepubs/009696799/functions/poll.html
+> include <poll.h>
+poll(), es una funcion del sistema que te permite monitorizar multiples descriptores de archivos como socketspara saber si puedes leer o escribir en ellos sin bloquear tu programa
+Necesitamos poder escuchar muchas conexiones a la vez sin que uan sola conexion bloquee las demas
+
+int poll(struct pollfd fds[], nfds_t nfds, int timeout);
+    - fds[]: Array de estructuras pollfd, que indican qué descriptores de archivo quieres   observar y qué eventos te interesan (lectura, escritura, errores...).
+    - nfds: Número de elementos en el array fds[].
+    - timeout:
+        - 0: No espera, devuelve de inmediato (modo no bloqueante).
+        - -1: Espera indefinidamente hasta que haya algo que hacer.
+        - 0: Espera ese número de milisegundos como máximo.
+
+struct pollfd {
+    int   fd;         // File descriptor que quieres vigilar
+    short events;     // Qué eventos te interesan (ej: POLLIN, POLLOUT)
+    short revents;    // Qué eventos han ocurrido (rellenado por poll())
+};
+
+POLLIN	- Hay datos para leer
+POLLOUT	- Puedes escribir sin bloquear
+POLLERR	- Error en el descriptor
+POLLHUP	- El otro extremo ha cerrado la conexión
+
+Con poll(), se puede hacer:
+- Escuchar nuevas conexiones entrantes.
+- Leer mensajes de clientes conectados.
+- Enviar mensajes cuando estén listos para recibirlos.
+- Detectar errores o desconexiones.
 
 ## select
-> include <>
+https://pubs.opengroup.org/onlinepubs/7908799/xsh/select.html
+> include <sys/time.h>
+
+Sirve para lo mismo que poll(), pero select() tiene un limite fijo de descriptores , que depende de FD_SETSIZE 
 
 ## kqueue
 > include <>

@@ -4,6 +4,11 @@
 # define SERVER_HPP
 
 # include <irc.hpp>
+# include <sys/socket.h>
+# include <netinet/in.h>
+# include <exception>
+# include <unistd.h>
+# include <cstring> 
 
 class Client;
 class Channel;
@@ -15,6 +20,8 @@ class Server
 		std::string							_password;
 		std::map <std::string, Client *>	_clients;
 		std::map <std::string, Channel *>	_channel;
+		int									_socketFd;
+		sockaddr_in							_servAddr;
 
 		Server(const Server &other);
 		Server &operator=(const Server &other);
@@ -29,7 +36,8 @@ class Server
 		const int &getPort() const;
 		const std::string &getPassword() const;
 
-		// Setters
+		/* TODO: hacen falta? si los inicializamos en el constructor */
+		// Setters 
 		void setPort(const int &port);
 		void setPassword(const std::string &password);
 };

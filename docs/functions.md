@@ -93,10 +93,17 @@ Realiza la resolución de nombres de dominio y servicios en direcciones IP y cre
 Libera la memoria dinámica asignada. Es obligatorio llamarla una vez que hayas terminado de usar la lista de resultados devuelta por <ins>*getaddrinfo*</ins>, para evitar fugas de memoria. No cierra sockets ni libera ningún otro recurso.
 
 ## bind
+https://pubs.opengroup.org/onlinepubs/009695399/functions/bind.html
 > include <sys/socket.h>
 > include <netinet/in.h>
 
 Asocia un socket con una dirección local (IP y puerto). Es necesario antes de escuchar conexiones entrantes en un servidor.
+
+int bind(int sockfd, const struct sockaddr *addr, socklen_t addrlen);
+
+- sockfd: el descriptor de fichero del socket.
+- addr: puntero a una estructura que contiene la dirección (como IP y puerto).
+- addrlen: el tamaño de esa estructura.
 
 ## connect
 > include <sys/socket.h>
@@ -105,28 +112,43 @@ Asocia un socket con una dirección local (IP y puerto). Es necesario antes de e
 Establece una conexión con un socket remoto.
 
 ## listen
+https://pubs.opengroup.org/onlinepubs/009695099/functions/listen.html
 > include <sys/socket.h>
 
 Marca un socket como pasivo, es decir, preparado para aceptar conexiones entrantes. Se usa después de <ins>*bind()*</ins>.
+
+int listen(int sockfd, int backlog);
+
+- backlog es el número máximo de conexiones pendientes que el sistema puede mantener en cola mientras tu servidor aún no las acepta con accept()
+no significa que sean esos los usuarios que se puedan conectar significa que puede haber hasta x conexiones esperando a ser atendidas por acept()
 
 ## accept
 > include <>
 
 ## htons
-> include <>
+https://www.gta.ufrj.br/ensino/eel878/sockets/htonsman.html
+> include <netinet/in.h>
 
-htons - Abrieviatura de host a red
+Como cada pc tiene un orden diferente de bytes estas funciones sirven para convertir el orden de bytes de tu host (maquina) a el orden de bytes de la network
+
+htons - de host a red corta
 
 ## htonl
-> include <>
+https://www.gta.ufrj.br/ensino/eel878/sockets/htonsman.html
+> include <netinet/in.h>
 
-htonl - Abreviatura de host a red larga
+htonl - de host a red larga
 
 ## ntohs
-> include <>
+https://www.gta.ufrj.br/ensino/eel878/sockets/htonsman.html
+> include <netinet/in.h>
+ntohs - de red a host larga
 
 ## ntohl
-> include <>
+https://www.gta.ufrj.br/ensino/eel878/sockets/htonsman.html
+> include <netinet/in.h>
+
+ntohl - de red a host corta
 
 ## inet_addr
 > include <>
@@ -158,6 +180,7 @@ https://pubs.opengroup.org/onlinepubs/007904975/functions/fcntl.html
 
 En nuestro caso lo usaremos para modificar las flags del archivo a O_NONBLOCK
 con F_GETFD para conseguirlas y F_SETFD para modificarlas
+
 Sirve para:
 - Manipular descriptores de archivos (como sockets o archivos abiertos).
 - Cambiar o leer opciones y propiedades asociadas a esos descriptores.

@@ -43,7 +43,7 @@ int main(int ac, char** av) {
 		return 1;
 
 	std::cout << "Starting server on port " << port << " with password '" << av[2] << "'." << std::endl;
-	/* TODO: pasar un int */
+	
 	Server	Server(port, av[2]);
 
 	return 0;

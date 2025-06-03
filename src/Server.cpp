@@ -67,6 +67,10 @@ Server::Server( const int &port, const std::string &password )
 
 		std::cout << "Server listen in port -> " << port << std::endl;
 
+		/* 7. create poll struct */
+		_fds[0].fd = _socketFd;
+		_fds[0].events = POLLIN;
+
 }
 
 Server::Server( const Server &other ) {
@@ -80,6 +84,15 @@ Server &Server::operator=( Server const &other )
 ;
 	}
 	return *this;
+}
+
+
+void Server::run()
+{
+	while(1)
+	{
+
+	}
 }
 
 const int &Server::getPort() const { return _port; }

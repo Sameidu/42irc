@@ -8,10 +8,13 @@
 # include <netinet/in.h>
 # include <exception>
 # include <unistd.h>
-# include <cstring> 
+# include <cstring>
+# include <poll.h> 
 
 class Client;
 class Channel;
+
+#define	MAX_FDS	1024
 
 class Server
 {
@@ -22,6 +25,7 @@ class Server
 		std::map <std::string, Channel *>	_channel;
 		int									_socketFd;
 		sockaddr_in							_servAddr;
+		struct pollfd						_fds[MAX_FDS];
 
 		Server(const Server &other);
 		Server &operator=(const Server &other);
@@ -32,6 +36,7 @@ class Server
 		Server(const int &port, const std::string &password);
 		~Server();
 
+		void run();
 		// Getters
 		const int &getPort() const;
 		const std::string &getPassword() const;

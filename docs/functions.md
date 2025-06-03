@@ -1,6 +1,12 @@
 # FUNCIONES PERMITIDAS
 
 -> https://hyjae.gitbooks.io/socket-programming/content/
+-> https://datatracker.ietf.org/doc/html/rfc2812#section-3.2.1
+-> https://modern.ircdocs.horse/
+-> https://medium.com/@mohamedsarda/ft-irc-channels-and-command-management-ff1ff3758a0b
+
+
+
 
 ## socket
 > include <sys/socket.h>
@@ -229,6 +235,15 @@ Sirve para lo mismo que poll(), pero select() tiene un limite fijo de descriptor
 
 ## kqueue
 > include <>
+
+Sirve para lo mismo que poll, es mas complejo de usar y solo funciona en  (BSD/MacOS)
+
+Característica	    select()	    poll()	            kqueue()
+Portabilidad	    ⭐⭐⭐⭐⭐	  ⭐⭐⭐⭐	            ⭐
+Límite de FDs	    ❌(1024)	    ✅ (sin límite)	  ✅ (sin límite)
+Escalabilidad	    ❌	            👍	             ⭐⭐⭐⭐⭐
+Facilidad de uso	👍	            👍👍	              😵
+Reutilizable	    ❌	            ❌	                ✅
 
 ## epoll
 > include <>

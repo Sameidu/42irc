@@ -36,6 +36,7 @@ void Server::init() {
 	else
 		std::cout << "SO_REUSEADDR set successfully" << std::endl;
 	/* 3. change the fd flags to make the file non-blocking ---> esta en utils.cpp la funcion*/
+	// TODO: Revisar fcntl() acorde con subject
 	if (!setNonBlocking(_socketFd))
 		throw std::runtime_error("Error: setting flags to non blocking");
 	else
@@ -90,12 +91,17 @@ void Server::run() {
 		std::cout<< "Waiting for events..." << std::endl;
 		int numEvents = epoll_wait(_epollFd, _events, MAX_EVENTS, -1);
 		if (numEvents < 0)
-			throw s td::runtime_error("Error: when waiting for events");
+			throw std::runtime_error("Error: when waiting for events");
 		try {
-			
-			for (int i = 0; i < numEvents; i++) {
+			for (int i = 0; i <= numEvents; i++) {
 				if (numEvents == EPOLLIN) {
-					//conectas usuario
+					sockaddr_in client_addr;
+					socklen_t client_len = sizeof(client_addr);
+
+				 	int client_fd = accept(_socketFd, (sockaddr*)&client_addr, &client_len);
+					if (client_fd < 0)
+						throw std::runtime_error("El cliente no furula");
+					//std::cout << "Asawasa" << std::endl;
 				}
 			// 	else if (y) {
 			// 		// hacer cosas usuario

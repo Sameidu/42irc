@@ -44,4 +44,6 @@ class Server
 		void init();
 };
 
+bool	setNonBlocking(int fd);
+
 #endif

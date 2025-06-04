@@ -16,7 +16,7 @@ const std::string &Client::getRealname() const { return _realname; }
 
 const std::string &Client::getPassword() const { return _password; }
 
-int Client::getFd() const { return _fd; }
+int Client::getFd() const { return _clientFd; }
 
 // SETTERS
 
@@ -28,6 +28,6 @@ void Client::setRealname(const std::string &realname) { _realname = realname; }
 
 void Client::setPassword(const std::string &password) { _password = password; }
 
-void Client::setFd(int fd) { _fd = fd; }
+void Client::setFd(int fd) { _clientFd = fd; }
 
 

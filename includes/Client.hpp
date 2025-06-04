@@ -13,7 +13,8 @@ class Client
 		std::string _nickname;
 		std::string _realname;
 		std::string _password;
-		int			_fd;
+		int			_clientFd;
+		//sockaddr_in	_clientAddr;
 
 	public:
 
@@ -35,5 +36,7 @@ class Client
 		void setFd(int fd);
 
 };
+
+// TODO: Comprobar si es necesario compartir funciones.
 
 #endif 

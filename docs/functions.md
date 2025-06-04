@@ -9,12 +9,14 @@ Crea un nuevo descriptor de socket, que permite establecer una comunicación ent
 
 - Estructura de direccion del socket:
 
+```c
 struct sockaddr_in {
     short sin_family;
     unsigned short sin_port; // Port Number
     struct in_addr sin_addr; // IP Address
     char sin_zero[8];
 }
+```
 
 ## close
 > include <unistd.h>
@@ -98,8 +100,9 @@ https://pubs.opengroup.org/onlinepubs/009695399/functions/bind.html
 > include <netinet/in.h>
 
 Asocia un socket con una dirección local (IP y puerto). Es necesario antes de escuchar conexiones entrantes en un servidor.
-
+```c
 int bind(int sockfd, const struct sockaddr *addr, socklen_t addrlen);
+```
 
 - sockfd: el descriptor de fichero del socket.
 - addr: puntero a una estructura que contiene la dirección (como IP y puerto).
@@ -193,8 +196,8 @@ int fcntl(int fd, int cmd, ... /* arg */ );
 ## poll
 https://pubs.opengroup.org/onlinepubs/009696799/functions/poll.html
 > include <poll.h>
-poll(), es una funcion del sistema que te permite monitorizar multiples descriptores de archivos como socketspara saber si puedes leer o escribir en ellos sin bloquear tu programa
-Necesitamos poder escuchar muchas conexiones a la vez sin que uan sola conexion bloquee las demas
+poll(), es una funcion del sistema que te permite monitorizar multiples descriptores de archivos como sockets para saber si puedes leer o escribir en ellos sin bloquear tu programa
+Necesitamos poder escuchar muchas conexiones a la vez sin que una sola conexion bloquee las demas
 
 int poll(struct pollfd fds[], nfds_t nfds, int timeout);
     - fds[]: Array de estructuras pollfd, que indican qué descriptores de archivo quieres   observar y qué eventos te interesan (lectura, escritura, errores...).
@@ -230,5 +233,118 @@ Sirve para lo mismo que poll(), pero select() tiene un limite fijo de descriptor
 ## kqueue
 > include <>
 
-## epoll
-> include <>
+## epoll  
+https://man7.org/linux/man-pages/man7/epoll.7.html  
+> include <sys/epoll.h>
+
+`epoll` es una interfaz específica de **Linux** diseñada para monitorizar eficientemente **grandes cantidades de descriptores** (sockets, archivos...).  
+A diferencia de `poll`, no tienes que enviar el array completo cada vez: el kernel mantiene internamente la lista de sockets y **te notifica solo cuando algo cambia**.
+
+Ideal para servidores donde necesitas manejar cientos o miles de clientes **sin bloquear** y con bajo consumo de CPU.
+
+---
+
+### 🧱 API Principal
+
+```c
+int epoll_create1(int flags);
+int epoll_ctl(int epfd, int op, int fd, struct epoll_event *event);
+int epoll_wait(int epfd, struct epoll_event *events, int maxevents, int timeout);
+```
+
+---
+
+### 1. Crear la instancia epoll
+
+```c
+int epfd = epoll_create1(0);
+```
+
+- Crea un nuevo "epoll instance".
+- Devuelve un descriptor que se usa para todas las operaciones futuras.
+
+---
+
+### 2. Registrar un descriptor
+
+```c
+struct epoll_event event;
+event.events = EPOLLIN;  // Nos interesa leer (nuevo cliente o mensaje)
+event.data.fd = socket_fd;
+
+epoll_ctl(epfd, EPOLL_CTL_ADD, socket_fd, &event);
+```
+
+- `EPOLL_CTL_ADD`: Añade un descriptor al monitoreo.
+- `EPOLL_CTL_MOD`: Modifica un descriptor ya registrado.
+- `EPOLL_CTL_DEL`: Elimina un descriptor.
+
+---
+
+### 3. Esperar eventos
+
+```c
+struct epoll_event events[MAX_EVENTS];
+int n = epoll_wait(epfd, events, MAX_EVENTS, timeout);
+```
+
+- `events`: array donde se guardarán los descriptores con eventos listos.
+- `MAX_EVENTS`: cuántos eventos quieres recibir como máximo.
+- `timeout` (milisegundos):
+  - `0`: no espera.
+  - `-1`: espera indefinidamente.
+  - `>0`: espera ese tiempo máximo.
+
+---
+
+### 4. Estructura de evento
+
+```c
+struct epoll_event {
+    uint32_t events;     // Eventos ocurridos (EPOLLIN, EPOLLOUT, etc.)
+    epoll_data_t data;   // Puedes guardar el fd o un puntero a una estructura personalizada
+};
+```
+
+---
+
+### 🧠 Eventos comunes
+
+| Constante     | Significado                        |
+|---------------|------------------------------------|
+| `EPOLLIN`     | Hay datos disponibles para leer    |
+| `EPOLLOUT`    | Puedes escribir sin bloquear       |
+| `EPOLLERR`    | Ocurrió un error                   |
+| `EPOLLHUP`    | El cliente cerró la conexión       |
+
+---
+
+### 🛠️ ¿Qué permite hacer `epoll()`?
+
+- Aceptar **nuevas conexiones** sin bloquear al resto.
+- Leer mensajes de muchos clientes **simultáneamente**.
+- Enviar respuestas **solo cuando el socket esté listo**.
+- Detectar **desconexiones** o errores y liberar recursos.
+
+---
+
+### 💬 Diferencia clave con `poll`
+
+| Característica         | `poll`                          | `epoll`                              |
+|------------------------|----------------------------------|---------------------------------------|
+| Modelo                 | Pasivo                          | Basado en eventos                    |
+| API                    | Se reenvía la lista completa    | Persistente en el kernel             |
+| Escalabilidad          | Lineal (`O(n)`)                  | Constante (`O(1)`)                   |
+| Ideal para             | Pocos clientes (<50)            | Muchos clientes (100+)              |
+| Plataforma             | POSIX general                   | Solo Linux                           |
+
+---
+
+Con `poll()`:
+- Debes **enviar el array completo** de sockets **en cada llamada**.
+- El kernel revisa uno por uno.
+
+Con `epoll()`:
+- El kernel **recuerda los sockets que le diste**.
+- Solo te informa de los que cambiaron.
+- Mucho más rápido y escalable para un servidor con muchos usuarios.

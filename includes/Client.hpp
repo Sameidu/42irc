@@ -14,8 +14,6 @@ class Client
 		std::string _realname;
 		std::string _password;
 		int			_fd;
-		Client(const Client &other);
-		Client &operator=(const Client &other);
 
 	public:
 

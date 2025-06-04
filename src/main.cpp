@@ -30,6 +30,8 @@ int main(int ac, char** av) {
 	try {
 		int port = parseArgs(av[1], av[2]); 
 		Server	Server(port, av[2]);
+		Server.init();
+		Server.run();
 	}
 	catch (const std::exception &e) {
 		std::cerr << "Error: " << e.what() << std::endl;

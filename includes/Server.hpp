@@ -12,6 +12,7 @@
 # include <fcntl.h>
 # include <cerrno>
 # include <sys/epoll.h>
+# include <arpa/inet.h>
 
 # include <Client.hpp>
 # include <Channel.hpp>
@@ -29,7 +30,6 @@ class Server
 		int									_socketFd;
 		sockaddr_in							_servAddr;
 		int									_epollFd;
-		epoll_event							_events[MAX_EVENTS];
  
 	public:
 

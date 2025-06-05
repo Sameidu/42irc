@@ -1,10 +1,8 @@
 #include <Client.hpp>
 
-Client::~Client() {
-}
+Client::~Client() {}
 
-Client::Client() {
-}
+Client::Client(const int &fd) : _clientFd(fd) {}
 
 // GETTERS
 

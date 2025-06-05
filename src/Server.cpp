@@ -69,9 +69,10 @@ void Server::init() {
 		throw std::runtime_error("Error: when creating epoll instance");
 
 	/* 8. Add the socket to the epoll instance */
-	_events[0].events = EPOLLIN; // We want to monitor for incoming connections
-	_events[0].data.fd = _socketFd; // The data field can be used to store the file descriptor
-	if (epoll_ctl(_epollFd, EPOLL_CTL_ADD, _socketFd, &_events[0]) < 0)
+	epoll_event ev;
+	ev.events = EPOLLIN; // We want to monitor for incoming connections
+	ev.data.fd = _socketFd; // The data field can be used to store the file descriptor
+	if (epoll_ctl(_epollFd, EPOLL_CTL_ADD, _socketFd, &ev) < 0)
 		throw std::runtime_error("Error: when adding the socket to the epoll instance");
 
 	/* 9. Print server info */
@@ -86,29 +87,36 @@ void Server::init() {
 }
 
 void Server::run() {
+	epoll_event events[MAX_EVENTS];
+
 	while (true) {
 		// TODO: Hay que manejar señales en el server.
-		std::cout<< "Waiting for events..." << std::endl;
-		int numEvents = epoll_wait(_epollFd, _events, MAX_EVENTS, -1);
+		std::cout<< "Waiting for events..." << std::endl << std::endl;
+		int numEvents = epoll_wait(_epollFd, events, MAX_EVENTS, -1);
 		if (numEvents < 0)
 			throw std::runtime_error("Error: when waiting for events");
 		try {
-			for (int i = 0; i <= numEvents; i++) {
-				if (numEvents == EPOLLIN) {
+			for (int i = 0; i < numEvents; i++) {
+				if (events[i].data.fd == _socketFd) {
+					// Esto es una nueva conexion de cliente al socket del servidor
 					sockaddr_in client_addr;
 					socklen_t client_len = sizeof(client_addr);
 
 				 	int client_fd = accept(_socketFd, (sockaddr*)&client_addr, &client_len);
 					if (client_fd < 0)
 						throw std::runtime_error("El cliente no furula");
-					//std::cout << "Asawasa" << std::endl;
+					if (!setNonBlocking(client_fd))
+					throw std::runtime_error("Error: setting flags to non blocking for client");
+				std::cout << "Cliente conectado con fd: " << client_fd << std::endl;
+				std::cout << "Cliente conectado desde: " 
+					<< inet_ntoa(client_addr.sin_addr) << ":" 
+					<< ntohs(client_addr.sin_port) << std::endl;
+					// Falta en realidad crear el objeto y guardar bien sus datos para luego poder manejar sus peticiones y tal
 				}
-			// 	else if (y) {
-			// 		// hacer cosas usuario
-			// 	}
-			// 	else if (z) {
-			// 		// se desconecta usuario o error
-			// 	}
+				else {
+					// Y si recibe cualquier otro evento que no sea el del socket del servidor hacemos cosas con los clientes (Aqui tambien cerrariamos clientes si se mueren)
+					std::cout << "Evento recibido de fd: " << events[i].data.fd << std::endl;
+				}
 			}
 		}
 		catch (const std::exception &e) {

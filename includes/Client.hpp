@@ -17,8 +17,7 @@ class Client
 		//sockaddr_in	_clientAddr;
 
 	public:
-
-		Client();
+		Client(const int &fd);
 		~Client();
 
 		// Getters

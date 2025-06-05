@@ -38,13 +38,15 @@ class Server
 		Server(const int &port, const std::string &password);
 		~Server();
 
-		void run();
 		// Getters
 		const int &getPort() const;
 		const std::string &getPassword() const;
 
-		void run();
-		void init();
+		void 	run();
+		void 	init();
+		void	connectNewClient();
+		void	parseMsg(std::string msg, int fdClient);
+		void	readMsg(epoll_event events);
 };
 
 bool	setNonBlocking(int fd);

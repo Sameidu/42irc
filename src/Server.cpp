@@ -24,12 +24,6 @@ void Server::init() {
 		throw std::runtime_error("Error: creating the socket server");
 	std::cout << "Socket created with fd -> " << _socketFd << std::endl;
 	/* 2. Allows the port to be reused immediately after closing the socket */
-	/* 	- The level argument specifies the protocol level at which the option resides. 
-			To set options at the socket level, specify the level argument as SOL_SOCKET.
-		- SO_REUSEADDR
-			Specifies that the rules used in validating addresses supplied to bind() should allow reuse of local addresses, 
-			if this is supported by the protocol. This option takes an int value. This is a Boolean option.
-	*/
 	int	opt = 1;
 	if (setsockopt(_socketFd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0)
 		throw std::runtime_error("Error: when setting SO_REUSEADDR");
@@ -43,22 +37,15 @@ void Server::init() {
 		std::cout << "Socket set to non-blocking mode" << std::endl;
 	/* 4. Init values at addr server struct */
 	std::memset(&_servAddr, 0, sizeof(_servAddr));
-	_servAddr.sin_family = AF_INET; // Specifies that the socket will use IPv4 addresses
-	_servAddr.sin_addr.s_addr = INADDR_ANY; /*INADDR_ANY is a special constant in socket 
-	programming that means, Listen on all available network interfaces of this host, 
-	no matter which interface the connection comes from, 
-	it is accepted as long as it reaches the specified port. */
-	_servAddr.sin_port = htons(_port); //port (converted to network format)
+	_servAddr.sin_family = AF_INET; 
+	_servAddr.sin_addr.s_addr = INADDR_ANY; 
+	_servAddr.sin_port = htons(_port); 
 			
 	/* 5. Associate a socket with the IP address and port */
-	/* (sockaddr*)&_servAddr --> Bind usa sockaddr no sockaddr_in que es el tipo de estructura que usamos 
-	 entonces la tenemos que castear a sockaddr* y puntero por que espera un puntero
-	 a la estructura no una estructura como tal*/
 	if (bind(_socketFd, (sockaddr*)&_servAddr, sizeof(_servAddr)) < 0)
 		throw std::runtime_error("Error: when using bind()");
 	/* 6. Put the socket in listening mode
-	Puts the socket in waiting mode. The number 5 is the maximum waiting queue size.*/
-	/* TODO: he puesto en 5 el numero maximo de conexiones que pueden estar en la cola pero no se que es mejor
+	// TODO: he puesto en 5 el numero maximo de conexiones que pueden estar en la cola pero no se que es mejor
 	cuantos clientes deberian poder intentarse conectar al mismo tiempo??*/
 	if (listen(_socketFd, 5) < 0)
 		throw std::runtime_error("Error: when using listen()");
@@ -70,12 +57,12 @@ void Server::init() {
 
 	/* 8. Add the socket to the epoll instance */
 	epoll_event ev;
-	ev.events = EPOLLIN; // We want to monitor for incoming connections
-	ev.data.fd = _socketFd; // The data field can be used to store the file descriptor
+	ev.events = EPOLLIN;
+	ev.data.fd = _socketFd; 
 	if (epoll_ctl(_epollFd, EPOLL_CTL_ADD, _socketFd, &ev) < 0)
 		throw std::runtime_error("Error: when adding the socket to the epoll instance");
 
-	/* 9. Print server info */
+	/* NOTE:  9. Print server info */
 	std::cout << "Server initialized with the following parameters:" << std::endl;
 	std::cout << "Port: " << _port << std::endl;
 	std::cout << "Password: " << _password << std::endl;
@@ -84,6 +71,53 @@ void Server::init() {
 	std::cout << "Server port (network byte order): " << ntohs(_servAddr.sin_port) << std::endl;
 	std::cout << "Server port (host byte order): " << _servAddr.sin_port << std::endl;
 	std::cout << "Server address family: " << _servAddr.sin_family << std::endl;
+}
+
+void	Server::connectNewClient()
+{
+	sockaddr_in client_addr;
+	socklen_t client_len = sizeof(client_addr);
+
+	int client_fd = accept(_socketFd, (sockaddr*)&client_addr, &client_len);
+	if (client_fd < 0)
+		throw std::runtime_error("El cliente no furula");
+
+	if (!setNonBlocking(client_fd))
+		throw std::runtime_error("Error: setting flags to non blocking for client");
+
+	Client	*auxClient =	new Client(client_fd, &client_addr);
+	epoll_event ev;
+	ev.events = EPOLLIN; // We want to monitor for incoming connections
+	ev.data.fd = client_fd;
+	if (epoll_ctl(_epollFd, EPOLL_CTL_ADD, client_fd, &ev) < 0)
+		throw std::runtime_error("Error: when add new client to epoll");
+
+	_clients.insert(std::pair<int, Client*>(client_fd, auxClient));
+
+	// NOTE: borrar
+	std::cout << "Cliente conectado con fd: " << client_fd << std::endl;
+	std::cout << "Cliente conectado desde: " 
+	<< inet_ntoa(client_addr.sin_addr) << ":" 
+	<< ntohs(client_addr.sin_port) << std::endl;
+}
+void	Server::parseMsg(std::string msg, int fdClient)
+{
+	std::cout << "hola: " <<  _clients[fdClient]->getFd() << std::endl;
+	std::cout << "Mensaje recibido: " << msg << std::endl;
+}
+
+void	Server::readMsg(epoll_event events)
+{
+	std::cout << "Evento recibido de fd: " << events.data.fd << std::endl;
+	char	msg[MAX_BYTES_MSG];
+	std::memset(msg, 0, sizeof(msg));
+	int bytes_recived =  recv(events.data.fd, &msg, MAX_BYTES_MSG, 0);
+	std::cout << bytes_recived << std::endl;
+	if (bytes_recived < 0)
+		throw std::runtime_error("Error: on recv()");
+	// NOTE: borrar
+	parseMsg(msg, events.data.fd);
+
 }
 
 void Server::run() {
@@ -97,25 +131,12 @@ void Server::run() {
 			throw std::runtime_error("Error: when waiting for events");
 		try {
 			for (int i = 0; i < numEvents; i++) {
-				if (events[i].data.fd == _socketFd) {
-					// Esto es una nueva conexion de cliente al socket del servidor
-					sockaddr_in client_addr;
-					socklen_t client_len = sizeof(client_addr);
-
-				 	int client_fd = accept(_socketFd, (sockaddr*)&client_addr, &client_len);
-					if (client_fd < 0)
-						throw std::runtime_error("El cliente no furula");
-					if (!setNonBlocking(client_fd))
-					throw std::runtime_error("Error: setting flags to non blocking for client");
-				std::cout << "Cliente conectado con fd: " << client_fd << std::endl;
-				std::cout << "Cliente conectado desde: " 
-					<< inet_ntoa(client_addr.sin_addr) << ":" 
-					<< ntohs(client_addr.sin_port) << std::endl;
-					// Falta en realidad crear el objeto y guardar bien sus datos para luego poder manejar sus peticiones y tal
-				}
+				if (events[i].data.fd == _socketFd)
+					connectNewClient();
 				else {
-					// Y si recibe cualquier otro evento que no sea el del socket del servidor hacemos cosas con los clientes (Aqui tambien cerrariamos clientes si se mueren)
-					std::cout << "Evento recibido de fd: " << events[i].data.fd << std::endl;
+					if (events->events == EPOLLIN)
+						readMsg(events[i]);
+					// TODO: gestionar el resto de eventos 
 				}
 			}
 		}

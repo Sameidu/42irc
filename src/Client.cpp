@@ -2,30 +2,27 @@
 
 Client::~Client() {}
 
-Client::Client(const int &fd) : _clientFd(fd) {}
+//Client::Client(const int fd) : _clientFd(fd){}
+Client::Client(const int fd, sockaddr_in *clientAddr) : _clientFd(fd), _clientAddr(clientAddr){
+    (void)_clientAddr;
+}
 
 // GETTERS
 
-const std::string &Client::getUsername() const { return _username; }
+const std::string &Client::getUsername() const { return _userName; }
 
-const std::string &Client::getNickname() const { return _nickname; }
+const std::string &Client::getNickname() const { return _nickName; }
 
-const std::string &Client::getRealname() const { return _realname; }
+const std::string &Client::getRealname() const { return _realName; }
 
-const std::string &Client::getPassword() const { return _password; }
 
 int Client::getFd() const { return _clientFd; }
 
 // SETTERS
 
-void Client::setUsername(const std::string &username) { _username = username; }
+void Client::setUsername(const std::string &username) { _userName = username; }
 
-void Client::setNickname(const std::string &nickname) { _nickname = nickname; }
+void Client::setNickname(const std::string &nickname) { _nickName = nickname; }
 
-void Client::setRealname(const std::string &realname) { _realname = realname; }
-
-void Client::setPassword(const std::string &password) { _password = password; }
-
-void Client::setFd(int fd) { _clientFd = fd; }
-
+void Client::setRealname(const std::string &realname) { _realName = realname; }
 

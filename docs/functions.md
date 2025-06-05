@@ -5,9 +5,6 @@
 -> https://modern.ircdocs.horse/
 -> https://medium.com/@mohamedsarda/ft-irc-channels-and-command-management-ff1ff3758a0b
 
-
-
-
 ## socket
 > include <sys/socket.h>
 
@@ -246,4 +243,5 @@ Facilidad de uso	👍	            👍👍	              😵
 Reutilizable	    ❌	            ❌	                ✅
 
 ## epoll
+https://man7.org/linux/man-pages/man7/epoll.7.html
 > include <>

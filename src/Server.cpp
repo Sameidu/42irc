@@ -68,8 +68,9 @@ Server::Server( const int &port, const std::string &password )
 		std::cout << "Server listen in port -> " << port << std::endl;
 
 		/* 7. create poll struct */
-		_fds[0].fd = _socketFd;
-		_fds[0].events = POLLIN;
+		_fds[0].fd = _socketFd; // metemos el socket del server
+		_fds[0].events = POLLIN; // lo que tiene que vigilar , si el socket escribe en el
+		_nFds = 1; // esto es un contador de cuantos sockets tiene que vigilar el poll se inicia a uno por que esta el server
 
 }
 

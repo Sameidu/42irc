@@ -14,7 +14,7 @@
 class Client;
 class Channel;
 
-#define	MAX_FDS	1024
+# define	MAX_FDS	1024
 
 class Server
 {
@@ -26,6 +26,7 @@ class Server
 		int									_socketFd;
 		sockaddr_in							_servAddr;
 		struct pollfd						_fds[MAX_FDS];
+		int									_nFds;
 
 		Server(const Server &other);
 		Server &operator=(const Server &other);

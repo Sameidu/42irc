@@ -21,7 +21,8 @@ VPATH := src:src
 
 SRC     :=	main.cpp \
 			Client.cpp \
-			Server.cpp
+			Server.cpp \
+			utils.cpp
 
 OBJ     := $(SRC:%.cpp=$(OBJ_DIR)/%.o)
 

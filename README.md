@@ -40,6 +40,12 @@ El ejecutable se generará con el nombre ircserv
 
 ### Conectarte a tu servidor con irssi
 
-- 
+- ./irssi IP PORT
+- PASS password
+- NICK tuNICK
+- USER tuUser
+
+cuando el cliente se conecte hay  que mandar un msg de RPL_WELCOME
+
 
 

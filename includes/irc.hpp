@@ -10,6 +10,10 @@
 # include <algorithm>
 # include <string>
 
-# define MAX_BITS_MSG    512
+# define MAX_BYTES_MSG   512
+# define MAX_EVENTS      128
+
+/* UTILS */
+bool	setNonBlocking(int fd);
 
 #endif 

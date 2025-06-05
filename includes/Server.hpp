@@ -9,7 +9,13 @@
 # include <exception>
 # include <unistd.h>
 # include <cstring>
-# include <poll.h> 
+# include <fcntl.h>
+# include <cerrno>
+# include <sys/epoll.h>
+# include <arpa/inet.h>
+
+# include <Client.hpp>
+# include <Channel.hpp>
 
 class Client;
 class Channel;
@@ -19,18 +25,13 @@ class Channel;
 class Server
 {
 	private:
-		int									_port;
-		std::string							_password;
-		std::map <std::string, Client *>	_clients;
+		const int							_port;
+		const std::string					_password;
+		std::map <int, Client *>			_clients;
 		std::map <std::string, Channel *>	_channel;
 		int									_socketFd;
 		sockaddr_in							_servAddr;
-		struct pollfd						_fds[MAX_FDS];
-		int									_nFds;
-
-		Server(const Server &other);
-		Server &operator=(const Server &other);
-		Server();
+		int									_epollFd;
  
 	public:
 
@@ -42,10 +43,10 @@ class Server
 		const int &getPort() const;
 		const std::string &getPassword() const;
 
-		/* TODO: hacen falta? si los inicializamos en el constructor */
-		// Setters 
-		void setPort(const int &port);
-		void setPassword(const std::string &password);
+		void run();
+		void init();
 };
+
+bool	setNonBlocking(int fd);
 
 #endif

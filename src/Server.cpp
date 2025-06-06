@@ -100,11 +100,52 @@ void	Server::connectNewClient()
 	<< inet_ntoa(client_addr.sin_addr) << ":" 
 	<< ntohs(client_addr.sin_port) << std::endl;
 }
+
 void	Server::parseMsg(std::string msg, int fdClient)
 {
 	std::cout << "hola: " <<  _clients[fdClient]->getFd() << std::endl;
 	std::cout << "Mensaje recibido: " << msg << std::endl;
+
+	if (_clients[fdClient]->getIsConnect() == 3)
+	{
+		// TODO esta conectado, 
+	}
+	else
+	{
+		// TODO: pasarlo a otra funcion?
+		size_t firstSpace = msg.find(' ');
+		std::string command = msg.substr(0, firstSpace);
+
+		// solo pueden ser 3 comandos y tienen que hacerlo en orden??
+		if (_clients[fdClient]->getIsConnect() == 0 && command == "PASS")
+		{
+			//FIXME - no me detecta que la contarseña que lñe paso sea igual a la del server
+			std::string pw = msg.substr(firstSpace + 1, msg.size());
+			std::cout << "--->" << msg.size() << "<---"  << std::endl;
+			std::cout << "--->" << pw << "<---"  << std::endl;
+			if ( pw == _password)
+			{
+				_clients[fdClient]->setIsConnect(1);
+				std::cout << "PASS ok" << std::endl;
+			}
+			else
+				std::cout << "Incorrect password" << std::endl;
+		}
+		else if (_clients[fdClient]->getIsConnect() == 1 && command == "NICK")
+		{
+			_clients[fdClient]->setIsConnect(2);
+			std::cout << "NICK ok" << std::endl;
+		}
+		else if (_clients[fdClient]->getIsConnect() == 2 && command == "USER")
+		{
+			_clients[fdClient]->setIsConnect(3);
+			std::cout << "USER ok" << std::endl;
+		}
+		else
+			std::cout << "you are not connected" << std::endl;
+	}
 }
+
 
 void	Server::readMsg(epoll_event events)
 {

@@ -16,6 +16,7 @@ class Client
 		std::string _realName;
 		const int	_clientFd;
 		sockaddr_in	*_clientAddr;
+		int		_isConnect;
 
 	public:
 		// Client(const int fd);
@@ -26,12 +27,14 @@ class Client
 		const std::string &getUsername() const;
 		const std::string &getNickname() const;
 		const std::string &getRealname() const;
+		const int &getIsConnect() const;
 		int getFd() const;
 
 		// Setters
 		void setUsername(const std::string &username);
 		void setNickname(const std::string &nickname);
 		void setRealname(const std::string &realname);
+		void setIsConnect(const int &isConnect);
 
 };
 

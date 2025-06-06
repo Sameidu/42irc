@@ -34,7 +34,7 @@ int main(int ac, char** av) {
 		Server.run();
 	}
 	catch (const std::exception &e) {
-		std::cerr << "Error: " << e.what() << std::endl;
+		std::cerr << RED << "Error: " << CLEAR << e.what() << std::endl;
 		return 1;
 	}
 

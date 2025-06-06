@@ -7,13 +7,20 @@ const int &Server::getPort() const { return _port; }
 const std::string &Server::getPassword() const { return _password; }
 
 Server::Server( const int &port, const std::string &password )
-	: _port(port), _password(password), _socketFd(-1), _epollFd(-1) {}
-	
+	: _port(port), _password(password), _running(true), _socketFd(-1), _epollFd(-1) {}
+
 Server::~Server() {
 	if (_socketFd >= 0)
 		close(_socketFd);
 	if (_epollFd >= 0)
 		close(_epollFd);
+	for (std::map<int, Client *>::iterator it = _clients.begin(); it != _clients.end(); ++it) {
+		if (it->second) {
+			close(it->second->getFd());
+			delete it->second;
+		}
+	}
+	_clients.clear();
 	std::cout << "Server closed" << std::endl;
 }
 
@@ -87,7 +94,7 @@ void	Server::connectNewClient()
 
 	Client	*auxClient =	new Client(client_fd, &client_addr);
 	epoll_event ev;
-	ev.events = EPOLLIN; // We want to monitor for incoming connections
+	ev.events = EPOLLIN | EPOLLRDHUP; // EPOLLRDHUP to handle client disconnection
 	ev.data.fd = client_fd;
 	if (epoll_ctl(_epollFd, EPOLL_CTL_ADD, client_fd, &ev) < 0)
 		throw std::runtime_error("Error: when add new client to epoll");
@@ -106,42 +113,59 @@ void	Server::parseMsg(std::string msg, int fdClient)
 	std::cout << "Mensaje recibido: " << msg << std::endl;
 }
 
-void	Server::readMsg(epoll_event events)
+void	Server::readMsg(int fd)
 {
-	std::cout << "Evento recibido de fd: " << events.data.fd << std::endl;
+	std::cout << "Evento recibido de fd: " << fd << std::endl;
 	char	msg[MAX_BYTES_MSG];
 	std::memset(msg, 0, sizeof(msg));
-	int bytes_recived =  recv(events.data.fd, &msg, MAX_BYTES_MSG, 0);
+	int bytes_recived =  recv(fd, &msg, MAX_BYTES_MSG, 0);
 	std::cout << bytes_recived << std::endl;
 	if (bytes_recived < 0)
 		throw std::runtime_error("Error: on recv()");
 	// NOTE: borrar
-	parseMsg(msg, events.data.fd);
+	parseMsg(msg, fd);
 
+}
+
+void Server::disconnectClient(int fd) {
+	if (_clients.find(fd) == _clients.end()) 
+		throw std::runtime_error("Error: trying to disconnect a client that does not exist");
+	
+	std::cout << "Disconnecting client with fd: " << fd << std::endl;
+	close(fd);
+	_clients.erase(fd);
+	
+	epoll_ctl(_epollFd, EPOLL_CTL_DEL, fd, NULL);
+	std::cout << "Client disconnected successfully." << std::endl;
 }
 
 void Server::run() {
 	epoll_event events[MAX_EVENTS];
 
-	while (true) {
+	while (_running) {
 		// TODO: Hay que manejar señales en el server.
 		std::cout<< "Waiting for events..." << std::endl << std::endl;
 		int numEvents = epoll_wait(_epollFd, events, MAX_EVENTS, -1);
 		if (numEvents < 0)
 			throw std::runtime_error("Error: when waiting for events");
+		
 		try {
 			for (int i = 0; i < numEvents; i++) {
 				if (events[i].data.fd == _socketFd)
 					connectNewClient();
 				else {
-					if (events->events == EPOLLIN)
-						readMsg(events[i]);
-					// TODO: gestionar el resto de eventos 
+					int fd = events[i].data.fd;
+
+					if (events[i].events & EPOLLIN)
+						readMsg(fd);
+					if (events[i].events & (EPOLLRDHUP | EPOLLHUP | EPOLLERR))
+						disconnectClient(fd);
+					// TODO: gestionar el resto de eventos
 				}
 			}
 		}
 		catch (const std::exception &e) {
-			std::cerr << "Error: " << e.what() << std::endl;
+			std::cerr << RED << "Error: " << CLEAR << e.what() << std::endl;
 		}
 	}
 }

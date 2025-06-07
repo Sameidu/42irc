@@ -109,37 +109,55 @@ void	Server::parseMsg(std::string msg, int fdClient)
 	if (_clients[fdClient]->getIsConnect() == 3)
 	{
 		// TODO esta conectado, 
+		// ejecuteCommand(command, args);
+		std::cout << "you are connected" << std::endl;
 	}
 	else
 	{
 		// TODO: pasarlo a otra funcion?
 		size_t firstSpace = msg.find(' ');
 		std::string command = msg.substr(0, firstSpace);
+		std::string args = msg.substr(firstSpace + 1);
 
+		while (!args.empty() && (args[args.size() - 1] == '\r' || args[args.size() - 1] == '\n'))
+			args.erase(args.size() - 1);
+			
 		// solo pueden ser 3 comandos y tienen que hacerlo en orden??
 		if (_clients[fdClient]->getIsConnect() == 0 && command == "PASS")
 		{
-			//FIXME - no me detecta que la contarseña que lñe paso sea igual a la del server
-			std::string pw = msg.substr(firstSpace + 1, msg.size());
-			std::cout << "--->" << msg.size() << "<---"  << std::endl;
-			std::cout << "--->" << pw << "<---"  << std::endl;
-			if ( pw == _password)
+			if ( args == _password )
 			{
 				_clients[fdClient]->setIsConnect(1);
-				std::cout << "PASS ok" << std::endl;
+				if (send(fdClient, "Correct password, now enter your nick\n", 39 , MSG_EOR) < 0)
+					throw std::runtime_error("Error: sending msg to client");
 			}
 			else
-				std::cout << "Incorrect password" << std::endl;
+			{
+				if (send(fdClient, "Incorrect password, try again\n", 31 , MSG_EOR) < 0)
+					throw std::runtime_error("Error: sending msg to client");
+				if (_clients[fdClient]->getTimesWrongPass() < 3)
+				{
+					// TODO: cerrar el cliente??
+					std::cout << "DEBERIA DE PARAR" << std::endl;
+				}
+				else
+					_clients[fdClient]->setTimesWrongPass(_clients[fdClient]->getTimesWrongPass() + 1);
+			}
 		}
 		else if (_clients[fdClient]->getIsConnect() == 1 && command == "NICK")
 		{
+			// TODO: mirar si el nick existe ya o no, o es el user el que es individual?
 			_clients[fdClient]->setIsConnect(2);
-			std::cout << "NICK ok" << std::endl;
+			_clients[fdClient]->setNickname(args);
+			if (send(fdClient, "Nick OK, now enter your user\n", 30 , MSG_EOR) < 0)
+				throw std::runtime_error("Error: sending msg to client");
 		}
 		else if (_clients[fdClient]->getIsConnect() == 2 && command == "USER")
 		{
 			_clients[fdClient]->setIsConnect(3);
-			std::cout << "USER ok" << std::endl;
+			_clients[fdClient]->setUsername(args);
+			if (send(fdClient, "You are connected to the server\n", 33 , MSG_EOR) < 0)
+				throw std::runtime_error("Error: sending msg to client");
 		}
 		else
 			std::cout << "you are not connected" << std::endl;

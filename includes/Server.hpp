@@ -47,6 +47,8 @@ class Server
 		void	connectNewClient();
 		void	parseMsg(std::string msg, int fdClient);
 		void	readMsg(epoll_event events);
+		void	createUserForClient(std::string args, std::string command, int fdClient);
+		bool	isCorrectNickname(std::string arg, int fdClient);
 };
 
 bool	setNonBlocking(int fd);

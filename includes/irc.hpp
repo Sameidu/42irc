@@ -10,8 +10,10 @@
 # include <algorithm>
 # include <string>
 
-# define MAX_BYTES_MSG   512
-# define MAX_EVENTS      128
+# define MAX_BYTES_MSG      512
+# define MAX_EVENTS         128
+# define MAX_CHAR_NICKNAME  9
+# define MAX_PASS_TRY       3
 
 /* UTILS */
 bool	setNonBlocking(int fd);

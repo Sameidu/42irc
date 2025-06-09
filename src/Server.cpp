@@ -101,10 +101,80 @@ void	Server::connectNewClient()
 	<< ntohs(client_addr.sin_port) << std::endl;
 }
 
+
+bool	Server::isCorrectNickname(std::string arg, int fdClient)
+{
+	if (arg.size() > MAX_CHAR_NICKNAME)
+	{
+		if (send(fdClient, "Too long Nickname, max 9 chars\n", 32 , MSG_EOR) < 0)
+			throw std::runtime_error("Error: sending msg to client");
+		return false;
+	}
+	/* TODO: mirar si hay otro nickname igual*/
+	return true;
+}
+
+void	Server::createUserForClient(std::string args, std::string command, int fdClient)
+{
+	/* el cliente tiene que mandar exactamente estos comando en orden PASS, NICK, USER */
+	if (_clients[fdClient]->getIsConnect() == 0 && command == "PASS")
+	{
+		/* Solo tiene 3 intentos */
+		if ( args == _password )
+		{
+			_clients[fdClient]->setIsConnect(1);
+			if (send(fdClient, "Correct password, now enter your unique nickname\n", 50 , MSG_EOR) < 0)
+				throw std::runtime_error("Error: sending msg to client");
+		}
+		else
+		{
+			if (send(fdClient, "Incorrect password, try again\n", 31 , MSG_EOR) < 0)
+				throw std::runtime_error("Error: sending msg to client");
+			if (_clients[fdClient]->getTimesWrongPass() < MAX_PASS_TRY)
+			{
+				// TODO: cerrar el cliente??
+				std::cout << "DEBERIA DE PARAR" << std::endl;				}
+			else
+				_clients[fdClient]->setTimesWrongPass(_clients[fdClient]->getTimesWrongPass() + 1);
+		}
+	}
+	else if (_clients[fdClient]->getIsConnect() == 1 && command == "NICK")
+	{
+		if (isCorrectNickname(args, fdClient))
+		{
+			_clients[fdClient]->setIsConnect(2);
+			_clients[fdClient]->setNickname(args);
+			if (send(fdClient, "Nick OK, now enter your user\n", 30 , MSG_EOR) < 0)
+				throw std::runtime_error("Error: sending msg to client");
+		}
+	}
+	else if (_clients[fdClient]->getIsConnect() == 2 && command == "USER")
+	{
+		_clients[fdClient]->setIsConnect(3);
+		_clients[fdClient]->setUsername(args);
+		if (send(fdClient, "You are connected to the server\n", 33 , MSG_EOR) < 0)
+			throw std::runtime_error("Error: sending msg to client");
+	}
+	else
+		std::cout << "you are not connected to the server" << std::endl;
+		/* TODO: mandar msg al cliente?*/
+}
+
 void	Server::parseMsg(std::string msg, int fdClient)
 {
 	std::cout << "hola: " <<  _clients[fdClient]->getFd() << std::endl;
 	std::cout << "Mensaje recibido: " << msg << std::endl;
+
+	/*TODO: hay que parsear el msg segun la docu de irc*/
+	/* TODO: crear una structura del mensaje parseado? */
+
+	size_t firstSpace = msg.find(' ');
+	std::string command = msg.substr(0, firstSpace);
+	std::string args = msg.substr(firstSpace + 1);
+
+	/*quitar todos los chars del final*/
+	while (!args.empty() && (args[args.size() - 1] == '\r' || args[args.size() - 1] == '\n'))
+		args.erase(args.size() - 1);
 
 	if (_clients[fdClient]->getIsConnect() == 3)
 	{
@@ -113,55 +183,7 @@ void	Server::parseMsg(std::string msg, int fdClient)
 		std::cout << "you are connected" << std::endl;
 	}
 	else
-	{
-		// TODO: pasarlo a otra funcion?
-		size_t firstSpace = msg.find(' ');
-		std::string command = msg.substr(0, firstSpace);
-		std::string args = msg.substr(firstSpace + 1);
-
-		while (!args.empty() && (args[args.size() - 1] == '\r' || args[args.size() - 1] == '\n'))
-			args.erase(args.size() - 1);
-			
-		// solo pueden ser 3 comandos y tienen que hacerlo en orden??
-		if (_clients[fdClient]->getIsConnect() == 0 && command == "PASS")
-		{
-			if ( args == _password )
-			{
-				_clients[fdClient]->setIsConnect(1);
-				if (send(fdClient, "Correct password, now enter your nick\n", 39 , MSG_EOR) < 0)
-					throw std::runtime_error("Error: sending msg to client");
-			}
-			else
-			{
-				if (send(fdClient, "Incorrect password, try again\n", 31 , MSG_EOR) < 0)
-					throw std::runtime_error("Error: sending msg to client");
-				if (_clients[fdClient]->getTimesWrongPass() < 3)
-				{
-					// TODO: cerrar el cliente??
-					std::cout << "DEBERIA DE PARAR" << std::endl;
-				}
-				else
-					_clients[fdClient]->setTimesWrongPass(_clients[fdClient]->getTimesWrongPass() + 1);
-			}
-		}
-		else if (_clients[fdClient]->getIsConnect() == 1 && command == "NICK")
-		{
-			// TODO: mirar si el nick existe ya o no, o es el user el que es individual?
-			_clients[fdClient]->setIsConnect(2);
-			_clients[fdClient]->setNickname(args);
-			if (send(fdClient, "Nick OK, now enter your user\n", 30 , MSG_EOR) < 0)
-				throw std::runtime_error("Error: sending msg to client");
-		}
-		else if (_clients[fdClient]->getIsConnect() == 2 && command == "USER")
-		{
-			_clients[fdClient]->setIsConnect(3);
-			_clients[fdClient]->setUsername(args);
-			if (send(fdClient, "You are connected to the server\n", 33 , MSG_EOR) < 0)
-				throw std::runtime_error("Error: sending msg to client");
-		}
-		else
-			std::cout << "you are not connected" << std::endl;
-	}
+		createUserForClient(args, command, fdClient);
 }
 
 
@@ -174,9 +196,7 @@ void	Server::readMsg(epoll_event events)
 	std::cout << bytes_recived << std::endl;
 	if (bytes_recived < 0)
 		throw std::runtime_error("Error: on recv()");
-	// NOTE: borrar
 	parseMsg(msg, events.data.fd);
-
 }
 
 void Server::run() {

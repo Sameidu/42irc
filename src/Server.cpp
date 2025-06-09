@@ -154,6 +154,7 @@ void	Server::createUserForClient(std::string args, std::string command, int fdCl
 		_clients[fdClient]->setUsername(args);
 		if (send(fdClient, "You are connected to the server\n", 33 , MSG_EOR) < 0)
 			throw std::runtime_error("Error: sending msg to client");
+		/* TODO: Upon success, the client will receive an RPL_WELCOME (for users)*/
 	}
 	else
 		std::cout << "you are not connected to the server" << std::endl;

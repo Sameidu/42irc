@@ -21,8 +21,8 @@
 # include <sys/epoll.h>
 # include <arpa/inet.h>
 # include <iostream>
-# include <signal.h>
-# include <stdio.h>
+# include <csignal>
+# include <cstdio>
 
 # include <Client.hpp>
 # include <Channel.hpp>
@@ -48,7 +48,8 @@ class Server
 		void	disconnectClient(int fd);
 		void	parseMsg(std::string msg, int fdClient);
 		void	readMsg(int fd);
- 
+		void	manageServerInput();
+
 	public:
 
 		Server(const int &port, const std::string &password);

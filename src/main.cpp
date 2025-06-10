@@ -1,6 +1,22 @@
 #include <irc.hpp>
 #include <Server.hpp>
 
+//volatile sig_atomic_t g_signal = 0;
+
+void	handleSignal(int signal) {
+	(void)signal;
+		std::cout << "\nManage Signal..." << std::endl;
+}
+
+void	runSignals() {
+	signal(SIGINT, handleSignal);
+	signal(SIGQUIT, handleSignal);
+	signal(SIGTSTP, handleSignal);
+	signal(SIGTERM, handleSignal);
+	//signal(SIGTSTP, SIG_IGN);
+	signal(SIGPIPE, SIG_IGN);
+}
+
 int	parseArgs(const std::string &port, const std::string &password) 
 {
 	for (size_t i = 0; i < port.size(); ++i) {
@@ -28,6 +44,7 @@ int main(int ac, char** av) {
 	}
 	
 	try {
+		runSignals();
 		int port = parseArgs(av[1], av[2]); 
 		Server	Server(port, av[2]);
 		Server.init();

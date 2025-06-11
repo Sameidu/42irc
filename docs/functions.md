@@ -163,7 +163,24 @@ ntohl - de red a host corta
 > include <>
 
 ## send
-> include <>
+https://pubs.opengroup.org/onlinepubs/000095399/functions/send.html
+> include <sys/socket.h>
+
+ssize_t send(int socket, const void *buffer, size_t length, int flags);
+
+La función send() recibe los siguientes argumentos:
+
+- socket: Especifica el descriptor de archivo del socket.
+
+- buffer: Es un puntero al buffer que contiene el mensaje que se quiere enviar.
+
+- length: Especifica la longitud del mensaje, en bytes.
+
+- flags: Especifica el tipo de transmisión del mensaje. Los valores de este argumento se forman combinando (con operación lógica OR) uno o más de los siguientes flags:
+
+    - MSG_EOR: Marca el final de un registro (si el protocolo lo soporta).
+
+    - MSG_OOB: Envía datos fuera de banda en sockets que soportan este tipo de comunicaciones. La importancia y el significado de los datos fuera de banda dependen del protocolo utilizado.
 
 ## recv
 > include <>

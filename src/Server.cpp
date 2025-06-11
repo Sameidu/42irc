@@ -7,9 +7,19 @@ const int &Server::getPort() const { return _port; }
 const std::string &Server::getPassword() const { return _password; }
 
 Server::Server( const int &port, const std::string &password )
-	: _port(port), _password(password), _socketFd(-1), _epollFd(-1) {}
-	
+	: _port(port), _password(password), _running(true), _socketFd(-1), _epollFd(-1) {}
+
 Server::~Server() {
+	for (std::map<int, Client *>::iterator it = _clients.begin(); it != _clients.end(); ++it) {
+		if (it->second) {
+			std::cout << "Closing client with fd: " << it->second->getFd() << std::endl;
+			if (_epollFd >= 0)
+				epoll_ctl(_epollFd, EPOLL_CTL_DEL, it->second->getFd(), NULL);
+			close(it->second->getFd());
+			delete it->second;
+		}
+	}
+	_clients.clear();
 	if (_socketFd >= 0)
 		close(_socketFd);
 	if (_epollFd >= 0)
@@ -62,7 +72,15 @@ void Server::init() {
 	if (epoll_ctl(_epollFd, EPOLL_CTL_ADD, _socketFd, &ev) < 0)
 		throw std::runtime_error("Error: when adding the socket to the epoll instance");
 
-	/* NOTE:  9. Print server info */
+	/* 9. Add stdin to epoll instance */
+	fcntl(STDIN_FILENO, F_SETFL, O_NONBLOCK);
+	epoll_event stdin_ev;
+	stdin_ev.events = EPOLLIN;
+	stdin_ev.data.fd = STDIN_FILENO;
+	if (epoll_ctl(_epollFd, EPOLL_CTL_ADD, STDIN_FILENO, &stdin_ev) < 0)
+		throw std::runtime_error("Error: when adding stdin to epoll instance");
+
+	/* NOTE:  10. Print server info */
 	std::cout << "Server initialized with the following parameters:" << std::endl;
 	std::cout << "Port: " << _port << std::endl;
 	std::cout << "Password: " << _password << std::endl;
@@ -70,7 +88,11 @@ void Server::init() {
 	std::cout << "Epoll file descriptor: " << _epollFd << std::endl;
 	std::cout << "Server port (network byte order): " << ntohs(_servAddr.sin_port) << std::endl;
 	std::cout << "Server port (host byte order): " << _servAddr.sin_port << std::endl;
-	std::cout << "Server address family: " << _servAddr.sin_family << std::endl;
+	std::cout << "Server address family: " << _servAddr.sin_family << std::endl << std::endl;
+
+	std::cout << "Welcome to the IRC server!" << std::endl;
+	std::cout << "Type 'help' for a list of commands." << std::endl;
+	std::cout << "Type 'exit' or 'quit' to stop the server." << std::endl;
 }
 
 void	Server::connectNewClient()
@@ -85,13 +107,12 @@ void	Server::connectNewClient()
 	if (!setNonBlocking(client_fd))
 		throw std::runtime_error("Error: setting flags to non blocking for client");
 
-	Client	*auxClient =	new Client(client_fd, &client_addr);
+	Client	*auxClient = new Client(client_fd, &client_addr);
 	epoll_event ev;
-	ev.events = EPOLLIN; // We want to monitor for incoming connections
+	ev.events = EPOLLIN | EPOLLRDHUP;
 	ev.data.fd = client_fd;
 	if (epoll_ctl(_epollFd, EPOLL_CTL_ADD, client_fd, &ev) < 0)
 		throw std::runtime_error("Error: when add new client to epoll");
-
 	_clients.insert(std::pair<int, Client*>(client_fd, auxClient));
 
 	// NOTE: borrar
@@ -100,48 +121,187 @@ void	Server::connectNewClient()
 	<< inet_ntoa(client_addr.sin_addr) << ":" 
 	<< ntohs(client_addr.sin_port) << std::endl;
 }
+
+
+bool	Server::isCorrectNickname(std::string arg, int fdClient)
+{
+	if (arg.size() > MAX_CHAR_NICKNAME)
+	{
+		if (send(fdClient, "Too long Nickname, max 9 chars\n", 32 , MSG_EOR) < 0)
+			throw std::runtime_error("Error: sending msg to client");
+		return false;
+	}
+	/* TODO: mirar si hay otro nickname igual*/
+	return true;
+}
+
+void	Server::createUserForClient(std::string args, std::string command, int fdClient)
+{
+	/* el cliente tiene que mandar exactamente estos comando en orden PASS, NICK, USER */
+	if (_clients[fdClient]->getIsConnect() == 0 && command == "PASS")
+	{
+		/* Solo tiene 3 intentos */
+		if ( args == _password )
+		{
+			_clients[fdClient]->setIsConnect(1);
+			if (send(fdClient, "Correct password, now enter your unique nickname\n", 50 , MSG_EOR) < 0)
+				throw std::runtime_error("Error: sending msg to client");
+		}
+		else
+		{
+			if (send(fdClient, "Incorrect password, try again\n", 31 , MSG_EOR) < 0)
+				throw std::runtime_error("Error: sending msg to client");
+			if (_clients[fdClient]->getTimesWrongPass() < MAX_PASS_TRY)
+			{
+				// TODO: cerrar el cliente??
+				std::cout << "DEBERIA DE PARAR" << std::endl;				}
+			else
+				_clients[fdClient]->setTimesWrongPass(_clients[fdClient]->getTimesWrongPass() + 1);
+		}
+	}
+	else if (_clients[fdClient]->getIsConnect() == 1 && command == "NICK")
+	{
+		if (isCorrectNickname(args, fdClient))
+		{
+			_clients[fdClient]->setIsConnect(2);
+			_clients[fdClient]->setNickname(args);
+			if (send(fdClient, "Nick OK, now enter your user\n", 30 , MSG_EOR) < 0)
+				throw std::runtime_error("Error: sending msg to client");
+		}
+	}
+	else if (_clients[fdClient]->getIsConnect() == 2 && command == "USER")
+	{
+		_clients[fdClient]->setIsConnect(3);
+		_clients[fdClient]->setUsername(args);
+		if (send(fdClient, "You are connected to the server\n", 33 , MSG_EOR) < 0)
+			throw std::runtime_error("Error: sending msg to client");
+		/* TODO: Upon success, the client will receive an RPL_WELCOME (for users)*/
+	}
+	else
+		std::cout << "you are not connected to the server" << std::endl;
+		/* TODO: mandar msg al cliente?*/
+}
+
 void	Server::parseMsg(std::string msg, int fdClient)
 {
 	std::cout << "hola: " <<  _clients[fdClient]->getFd() << std::endl;
 	std::cout << "Mensaje recibido: " << msg << std::endl;
+
+	/*TODO: hay que parsear el msg segun la docu de irc*/
+	/* TODO: crear una structura del mensaje parseado? */
+
+	size_t firstSpace = msg.find(' ');
+	std::string command = msg.substr(0, firstSpace);
+	std::string args = msg.substr(firstSpace + 1);
+
+	/*quitar todos los chars del final*/
+	while (!args.empty() && (args[args.size() - 1] == '\r' || args[args.size() - 1] == '\n'))
+		args.erase(args.size() - 1);
+
+	if (_clients[fdClient]->getIsConnect() == 3)
+	{
+		// TODO esta conectado, 
+		// ejecuteCommand(command, args);
+		std::cout << "you are connected" << std::endl;
+	}
+	else
+		createUserForClient(args, command, fdClient);
 }
 
-void	Server::readMsg(epoll_event events)
+
+void	Server::readMsg(int fd)
 {
-	std::cout << "Evento recibido de fd: " << events.data.fd << std::endl;
+	std::cout << "Evento recibido de fd: " << fd << std::endl;
 	char	msg[MAX_BYTES_MSG];
 	std::memset(msg, 0, sizeof(msg));
-	int bytes_recived =  recv(events.data.fd, &msg, MAX_BYTES_MSG, 0);
+	int bytes_recived =  recv(fd, &msg, MAX_BYTES_MSG, 0);
 	std::cout << bytes_recived << std::endl;
 	if (bytes_recived < 0)
 		throw std::runtime_error("Error: on recv()");
 	// NOTE: borrar
-	parseMsg(msg, events.data.fd);
+	parseMsg(msg, fd);
 
+}
+
+void Server::disconnectClient(int fd) {
+	if (_clients.find(fd) == _clients.end()) 
+		throw std::runtime_error("Error: trying to disconnect a client that does not exist");
+	
+	std::cout << "Disconnecting client with fd: " << fd << std::endl;
+	Client *client = _clients[fd];
+	if (epoll_ctl(_epollFd, EPOLL_CTL_DEL, fd, NULL) < 0)
+		throw std::runtime_error("Error: when removing client from epoll instance");
+	if (close(fd) < 0) 
+		throw std::runtime_error("Error: when closing client socket");
+	delete client;
+	_clients.erase(fd);
+	std::cout << "Client disconnected successfully." << std::endl;
+}
+
+void  Server::manageServerInput() {
+	std::string input;
+	std::getline(std::cin, input);
+	if (input.empty())
+		return;
+	if (input == "exit" || input == "quit") {
+		_running = false;
+		std::cout << "Server is shutting down..." << std::endl;
+	}
+	else if (input == "clients") {
+		std::cout << "Connected clients: " << std::endl;
+		for (std::map<int, Client *>::iterator it = _clients.begin(); it != _clients.end(); ++it) {
+			std::cout << "[ Client fd: " << it->first
+					  << ", Username: " << it->second->getUsername() 
+					  << ", Nickname: " << it->second->getNickname() 
+					  << ", Realname: " << it->second->getRealname() << " ]"
+					  << std::endl;
+		}
+	}
+	else if (input == "help") {
+		std::cout << "Available commands:" << std::endl;
+		std::cout << "- exit/quit: Stop the server." << std::endl;
+		std::cout << "- clients: List connected clients. (Esto furula a medias)" << std::endl;
+		std::cout << "- channels: List channels. (Mentira, no funciona de momento)" << std::endl;
+	}
+	else {
+		std::cout << "Command not recognized. Type 'help' for a list of commands." << std::endl;
+	}
 }
 
 void Server::run() {
 	epoll_event events[MAX_EVENTS];
 
-	while (true) {
+	while (_running) {
 		// TODO: Hay que manejar señales en el server.
 		std::cout<< "Waiting for events..." << std::endl << std::endl;
 		int numEvents = epoll_wait(_epollFd, events, MAX_EVENTS, -1);
-		if (numEvents < 0)
+		if (numEvents < 0) {
+			if (errno == EINTR) {
+				std::cout << "Closing server by signal..." << std::endl;
+				_running = false;
+				continue;
+			}
 			throw std::runtime_error("Error: when waiting for events");
+		}
 		try {
 			for (int i = 0; i < numEvents; i++) {
-				if (events[i].data.fd == _socketFd)
+				if (events[i].data.fd == STDIN_FILENO) 
+					manageServerInput();
+				else if (events[i].data.fd == _socketFd)
 					connectNewClient();
 				else {
-					if (events->events == EPOLLIN)
-						readMsg(events[i]);
-					// TODO: gestionar el resto de eventos 
+					int fd = events[i].data.fd;
+
+					if (events[i].events & EPOLLIN)
+						readMsg(fd);
+					if (events[i].events & (EPOLLRDHUP | EPOLLHUP | EPOLLERR))
+						disconnectClient(fd);
+					// TODO: gestionar el resto de eventos
 				}
 			}
 		}
 		catch (const std::exception &e) {
-			std::cerr << "Error: " << e.what() << std::endl;
+			std::cerr << RED << "Error: " << CLEAR << e.what() << std::endl;
 		}
 	}
 }

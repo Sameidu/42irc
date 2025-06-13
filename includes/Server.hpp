@@ -32,6 +32,17 @@ class Channel;
 
 # define	MAX_FDS	1024
 
+# define	RPL_WELCOME 001
+
+typedef struct	s_msg
+{
+	std::string					allMsg;
+	std::string 				prefix;
+	std::string					command;
+	std::vector<std::string>	params;
+	std::string 				trailing;
+}  t_msg;
+
 class Server
 {
 	private:
@@ -46,9 +57,10 @@ class Server
 
 		void	connectNewClient();
 		void	disconnectClient(int fd);
-		void	parseMsg(std::string msg, int fdClient);
+		t_msg	parseMsg(std::string msg);
 		void	readMsg(int fd);
 		void	manageServerInput();
+		void	handleCommand(t_msg& msg, int fd);
 
 	public:
 
@@ -61,7 +73,6 @@ class Server
 
 		void 	run();
 		void 	init();
-		void	readMsg(epoll_event events);
 		void	createUserForClient(std::string args, std::string command, int fdClient);
 		bool	isCorrectNickname(std::string arg, int fdClient);
 };

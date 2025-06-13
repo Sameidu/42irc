@@ -11,13 +11,14 @@ class Client
 {
 	private:
 		/* TODO: var status admin, normal user*/
-		std::string	_userName;
-		std::string _nickName;
-		std::string _realName;
-		const int	_clientFd;
-		sockaddr_in	*_clientAddr;
-		int			_isConnect;
-		int			_timesWrongPass;
+		std::string		_userName;
+		std::string 	_nickName;
+		std::string 	_realName;
+		const int		_clientFd;
+		sockaddr_in	*	_clientAddr;
+		int				_isConnect;
+		int				_timesWrongPass;
+		std::string		_bufferMsgClient;
 
 	public:
 		// Client(const int fd);
@@ -31,6 +32,7 @@ class Client
 		const int &getIsConnect() const;
 		int getFd() const;
 		const int &getTimesWrongPass() const;
+		std::string &getBufferMsgClient();
 
 		// Setters
 		void setUsername(const std::string &username);
@@ -38,6 +40,7 @@ class Client
 		void setRealname(const std::string &realname);
 		void setIsConnect(const int &isConnect);
 		void setTimesWrongPass(const int & timesWrongPass);
+		void setBufferMsgClient(const std::string &msg);
 
 };
 

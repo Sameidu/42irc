@@ -122,104 +122,134 @@ void	Server::connectNewClient()
 	<< ntohs(client_addr.sin_port) << std::endl;
 }
 
-
-bool	Server::isCorrectNickname(std::string arg, int fdClient)
+t_msg	Server::parseMsg(std::string fullMsg)
 {
-	if (arg.size() > MAX_CHAR_NICKNAME)
+	std::cout << "Mensaje recibido:\n" << BLUE << fullMsg << CLEAR << std::endl;
+
+	/* 1. Me aseguro de que no quedan \r o \n por el msg los mando al final y los borro */
+	while (!fullMsg.empty() && (fullMsg[fullMsg.size() - 1] == '\r' || fullMsg[fullMsg.size() - 1] == '\n'))
+    	fullMsg.resize(fullMsg.size() - 1);
+
+	t_msg	msg;
+
+	/* guardo todo el msg */
+	msg.allMsg = fullMsg;
+
+	/* 2. elimina espacios iniciales */
+	size_t firstChar = fullMsg.find_first_not_of(' ');
+	if (firstChar != std::string::npos)
+    	fullMsg = fullMsg.substr(firstChar);
+
+	/* 3. busca primer espacio y guarda la primera palabra que deberia de ser el comando */
+	size_t firstSpace = fullMsg.find(' ');
+	std::string args;
+
+	if (firstSpace == std::string::npos) // solo te mandan un comando sin args
 	{
-		if (send(fdClient, "Too long Nickname, max 9 chars\n", 32 , MSG_EOR) < 0)
-			throw std::runtime_error("Error: sending msg to client");
-		return false;
+		msg.command = fullMsg;
+		args = "";
 	}
-	/* TODO: mirar si hay otro nickname igual*/
-	return true;
-}
-
-void	Server::createUserForClient(std::string args, std::string command, int fdClient)
-{
-	/* el cliente tiene que mandar exactamente estos comando en orden PASS, NICK, USER */
-	if (_clients[fdClient]->getIsConnect() == 0 && command == "PASS")
+	else
 	{
-		/* Solo tiene 3 intentos */
-		if ( args == _password )
+		msg.command = fullMsg.substr(0, firstSpace);
+		/* 4. quito el comando y guardo el resto como agumentos */
+		args = fullMsg.substr(firstSpace + 1);
+	}
+
+	
+	/* 5. busco si tiene trailing ':' y lo separo */
+
+	std::size_t trailingPos = args.find(':');
+	if (trailingPos != std::string::npos)
+	{
+		msg.trailing = args.substr(trailingPos + 1);
+		args = args.substr(0, trailingPos); // quito el trailing si hay 
+	}
+	
+	/* 6. mientras haya args y sean menos a 13 (max params)*/
+
+	while(!args.empty() && msg.params.size() < 13)
+	{
+		size_t pos = args.find(' '); 
+
+		std::string token; // guardamos el siguiente param
+
+		// Si no hemos encontrado más espacios → el resto del string es un token completo
+		if (pos == std::string::npos)
 		{
-			_clients[fdClient]->setIsConnect(1);
-			if (send(fdClient, "Correct password, now enter your unique nickname\n", 50 , MSG_EOR) < 0)
-				throw std::runtime_error("Error: sending msg to client");
+			token = args; // Todo args es el token
+			args.clear(); // Ya no queda nada por procesar
 		}
 		else
 		{
-			if (send(fdClient, "Incorrect password, try again\n", 31 , MSG_EOR) < 0)
-				throw std::runtime_error("Error: sending msg to client");
-			if (_clients[fdClient]->getTimesWrongPass() < MAX_PASS_TRY)
-			{
-				// TODO: cerrar el cliente??
-				std::cout << "DEBERIA DE PARAR" << std::endl;				}
-			else
-				_clients[fdClient]->setTimesWrongPass(_clients[fdClient]->getTimesWrongPass() + 1);
+			// Hemos encontrado un espacio → el token es lo que hay antes del espacio
+			token = args.substr(0, pos);
+			// Quitamos el token y el espacio
+			args = args.substr(pos + 1);
 		}
+
+		// Añadimos el token al vector de params
+		msg.params.push_back(token);
+
+		// Saltamos los espacios en blanco que puedan quedar al principio de args
+		size_t nonSpace = args.find_first_not_of(' ');
+
+		if (nonSpace != std::string::npos)
+			args = args.substr(nonSpace); // Quitamos los espacios
+		else
+			args.clear(); // Si solo quedaban espacios → vaciamos args
 	}
-	else if (_clients[fdClient]->getIsConnect() == 1 && command == "NICK")
+
+	/* si no tiene trailing el protocolo admite 14 parametros si hay mas los ignoro y los pierdo */
+	if (trailingPos == std::string::npos && !args.empty() && msg.params.size() < 14)
 	{
-		if (isCorrectNickname(args, fdClient))
+		size_t pos = args.find(' ');
+		if (pos == std::string::npos)
+			msg.params.push_back(args);
+		else
 		{
-			_clients[fdClient]->setIsConnect(2);
-			_clients[fdClient]->setNickname(args);
-			if (send(fdClient, "Nick OK, now enter your user\n", 30 , MSG_EOR) < 0)
-				throw std::runtime_error("Error: sending msg to client");
+			args = args.substr(0, pos);
+			msg.params.push_back(args);
 		}
 	}
-	else if (_clients[fdClient]->getIsConnect() == 2 && command == "USER")
-	{
-		_clients[fdClient]->setIsConnect(3);
-		_clients[fdClient]->setUsername(args);
-		if (send(fdClient, "You are connected to the server\n", 33 , MSG_EOR) < 0)
-			throw std::runtime_error("Error: sending msg to client");
-		/* TODO: Upon success, the client will receive an RPL_WELCOME (for users)*/
-	}
-	else
-		std::cout << "you are not connected to the server" << std::endl;
-		/* TODO: mandar msg al cliente?*/
-}
 
-void	Server::parseMsg(std::string msg, int fdClient)
-{
-	std::cout << "hola: " <<  _clients[fdClient]->getFd() << std::endl;
-	std::cout << "Mensaje recibido: " << msg << std::endl;
-
-	/*TODO: hay que parsear el msg segun la docu de irc*/
-	/* TODO: crear una structura del mensaje parseado? */
-
-	size_t firstSpace = msg.find(' ');
-	std::string command = msg.substr(0, firstSpace);
-	std::string args = msg.substr(firstSpace + 1);
-
-	/*quitar todos los chars del final*/
-	while (!args.empty() && (args[args.size() - 1] == '\r' || args[args.size() - 1] == '\n'))
-		args.erase(args.size() - 1);
-
-	if (_clients[fdClient]->getIsConnect() == 3)
-	{
-		// TODO esta conectado, 
-		// ejecuteCommand(command, args);
-		std::cout << "you are connected" << std::endl;
-	}
-	else
-		createUserForClient(args, command, fdClient);
+	return msg;
 }
 
 
 void	Server::readMsg(int fd)
 {
 	std::cout << "Evento recibido de fd: " << fd << std::endl;
+
 	char	msg[MAX_BYTES_MSG];
 	std::memset(msg, 0, sizeof(msg));
+
 	int bytes_recived =  recv(fd, &msg, MAX_BYTES_MSG, 0);
-	std::cout << bytes_recived << std::endl;
+
 	if (bytes_recived < 0)
 		throw std::runtime_error("Error: on recv()");
-	// NOTE: borrar
-	parseMsg(msg, fd);
+
+	std::cout << "Numero de bytes recibidos en el msg: " << bytes_recived << std::endl;
+
+	// Acumular siempre lo recibido en el buffer del cliente
+    std::string aux = _clients[fd]->getBufferMsgClient();
+    aux.append(msg, bytes_recived); // Usar bytes_recived, por si hay '\0' intermedios
+    _clients[fd]->setBufferMsgClient(aux);
+
+    std::string& buffer = _clients[fd]->getBufferMsgClient();
+    std::size_t pos;
+
+    // Mientras haya un mensaje completo (terminado en "\r\n")
+    while ((pos = buffer.find("\r\n")) != std::string::npos)
+    {
+        std::string fullMsg = buffer.substr(0, pos); // ya no esta \r\n
+        buffer.erase(0, pos + 2); // Eliminar mensaje + "\r\n" para seguir el bucle
+
+        std::cout << YELLOW << "REAL MSG: " << fullMsg << CLEAR << std::endl;
+
+        t_msg parsedMsg = parseMsg(fullMsg); // Parsear el mensaje
+		/* TODO: ejecutar cada linea */
+    }
 
 }
 
@@ -235,7 +265,7 @@ void Server::disconnectClient(int fd) {
 		throw std::runtime_error("Error: when closing client socket");
 	delete client;
 	_clients.erase(fd);
-	std::cout << "Client disconnected successfully." << std::endl;
+	std::cout << GREEN << "Client disconnected successfully." << CLEAR << std::endl;
 }
 
 void  Server::manageServerInput() {
@@ -245,7 +275,7 @@ void  Server::manageServerInput() {
 		return;
 	if (input == "exit" || input == "quit") {
 		_running = false;
-		std::cout << "Server is shutting down..." << std::endl;
+		std::cout << PINK << "Server is shutting down..." << CLEAR << std::endl;
 	}
 	else if (input == "clients") {
 		std::cout << "Connected clients: " << std::endl;
@@ -264,7 +294,7 @@ void  Server::manageServerInput() {
 		std::cout << "- channels: List channels. (Mentira, no funciona de momento)" << std::endl;
 	}
 	else {
-		std::cout << "Command not recognized. Type 'help' for a list of commands." << std::endl;
+		std::cout << RED << "Command not recognized. Type 'help' for a list of commands." << CLEAR << std::endl;
 	}
 }
 
@@ -273,7 +303,7 @@ void Server::run() {
 
 	while (_running) {
 		// TODO: Hay que manejar señales en el server.
-		std::cout<< "Waiting for events..." << std::endl << std::endl;
+		std::cout << PINK << "Waiting for events..." << CLEAR << std::endl << std::endl;
 		int numEvents = epoll_wait(_epollFd, events, MAX_EVENTS, -1);
 		if (numEvents < 0) {
 			if (errno == EINTR) {
@@ -301,7 +331,7 @@ void Server::run() {
 			}
 		}
 		catch (const std::exception &e) {
-			std::cerr << RED << "Error: " << CLEAR << e.what() << std::endl;
+			std::cerr << RED << "ErrorUwU: " << CLEAR << e.what() << std::endl;
 		}
 	}
 }

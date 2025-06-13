@@ -19,6 +19,8 @@ const int &Client::getIsConnect() const { return _isConnect;}
 
 const int &Client::getTimesWrongPass() const { return _timesWrongPass;}
 
+std::string &Client::getBufferMsgClient() {return _bufferMsgClient; }
+
 
 int Client::getFd() const { return _clientFd; }
 
@@ -33,3 +35,5 @@ void Client::setRealname(const std::string &realname) { _realName = realname; }
 void Client::setIsConnect(const int &isConnect) { _isConnect = isConnect; }
 
 void Client::setTimesWrongPass(const int &timesWrongPass) {  _timesWrongPass =  timesWrongPass; }
+
+void Client::setBufferMsgClient(const std::string &msg) { _bufferMsgClient = msg; }

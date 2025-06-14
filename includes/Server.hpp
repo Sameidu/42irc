@@ -33,8 +33,17 @@ class Channel;
 
 # define	MAX_FDS	1024
 
-# define	RPL_WELCOME 		001
-# define 	ERR_PASSWDMISMATCH	464
+/* CONNECT SUCCESS */
+# define	RPL_WELCOME 			001
+
+/* PASS */
+# define 	ERR_PASSWDMISMATCH		464
+
+/* NICK */
+# define	ERR_NONICKNAMEGIVEN		431 // Si no se da parámetro
+# define	ERR_ERRONEUSNICKNAME	432 // Si el nick contiene caracteres inválidos
+# define	ERR_NICKNAMEINUSE		433 // Si ya hay otro cliente con ese nick
+
 
 typedef struct	s_msg
 {
@@ -50,6 +59,7 @@ class Server
 {
 	private:
 		typedef int (Server::*FCmd)(t_msg&, int);
+
 		const int							_port;
 		const std::string					_password;
 		bool								_running;
@@ -86,7 +96,6 @@ class Server
 		void 	run();
 		void 	init();
 		void	createUserForClient(std::string args, std::string command, int fdClient);
-		bool	isCorrectNickname(std::string arg, int fdClient);
 };
 
 bool	setNonBlocking(int fd);

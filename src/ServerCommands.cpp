@@ -3,8 +3,10 @@
 void	Server::initCmds()
 {
 	_fCommands.insert(std::pair<std::string, FCmd>("PASS", &Server::CmPass));
+	_fCommands.insert(std::pair<std::string, FCmd>("NICK", &Server::CmNick));
+	_fCommands.insert(std::pair<std::string, FCmd>("USER", &Server::CmUser));
+}
 
-}	
 /* TODO: archivo totalmente inutil por el momento e incompleto */
 
 
@@ -31,32 +33,52 @@ void	Server::answerCLient(int status, t_msg& msg, int fdClient)
 			throw std::runtime_error("Error: sending msg to client");
 }
 
-void Server::handleCommand(t_msg& msg, int client)
+void Server::handleCommand(t_msg& msg, int fdClient)
 {
 	int status;
 
 	/* TODO: mapa std::map< std::string, *func(t_msg, int) */
 	if (msg.command == "PASS")
-		status = CmPass(msg, client);
+		status = CmPass(msg, fdClient);
 	else if (msg.command == "NICK")
-		status = CmNick(msg, client);
+		status = CmNick(msg, fdClient);
 	else if (msg.command == "USER")
-		status = CmUser(msg, client);
+		status = CmUser(msg, fdClient);
 	
-	answerCLient(status, msg, client);
+	answerCLient(status, msg, fdClient);
 }
 
-int Server::CmNick(t_msg& msg, int client)
+/* TODO
+nickname   =  ( letter / special ) *8( letter / digit / special / "-" )
+letter     =  A-Z a-z
+digit      =  0-9
+special    =  [ ] \ ` _ ^ { | }
+isValidNickname(string)
+sendError(int fd, int code, std::string msg)
+sendError(fdClient, 433, nick + " :Nickname is already in use");
+*/
+
+int Server::CmNick(t_msg& msg, int fdClient)
 {
-	if (arg.size() > MAX_CHAR_NICKNAME)
+	/* TODO: me falta validad caracteres validos para el nick */
+
+	if (msg.params.size() != 1)
+		return -1; /*TODO: msg error 2 many params o incorrect nickname ?? que hace irc */
+	if (msg.params[0].size() > MAX_CHAR_NICKNAME)
+		return -1; // TODO: error de demasiado alrgo el nickname
+	
+	std::map<int, Client*>::iterator	it;
+	for (it = _clients.begin(); it != _clients.end(); ++it)
 	{
-		if (send(fdClient, "Too long Nickname, max 9 chars\n", 32 , MSG_EOR) < 0)
-			throw std::runtime_error("Error: sending msg to client");
-		return false;
+		if (it->first == fdClient)
+			continue ;
+		else if (it->second->getNickname() == msg.params[0])
+			return -1; // TODO: erorr same nick
 	}
-	/* TODO: mirar si hay otro nickname igual*/
-    _clients[fdClient]->setNickname(args);
-	return true;
+
+    _clients[fdClient]->setNickname(msg.params[0]);
+
+	return 1;
 }
 
 int Server::CmUser(t_msg& msg, int fd)
@@ -69,18 +91,6 @@ int Server::CmPass(t_msg& msg, int fd)
 
 }
 
-
-bool	Server::isCorrectNickname(std::string arg, int fdClient)
-{
-	if (arg.size() > MAX_CHAR_NICKNAME)
-	{
-		if (send(fdClient, "Too long Nickname, max 9 chars\n", 32 , MSG_EOR) < 0)
-			throw std::runtime_error("Error: sending msg to client");
-		return false;
-	}
-	/* TODO: mirar si hay otro nickname igual*/
-	return true;
-}
 
 void	Server::createUserForClient(std::string args, std::string command, int fdClient)
 {

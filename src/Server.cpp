@@ -80,7 +80,10 @@ void Server::init() {
 	if (epoll_ctl(_epollFd, EPOLL_CTL_ADD, STDIN_FILENO, &stdin_ev) < 0)
 		throw std::runtime_error("Error: when adding stdin to epoll instance");
 
-	/* NOTE:  10. Print server info */
+	/* 10. Create std::map for commands */
+	// initCmds();
+
+	/* NOTE:  11. Print server info */
 	std::cout << "Server initialized with the following parameters:" << std::endl;
 	std::cout << "Port: " << _port << std::endl;
 	std::cout << "Password: " << _password << std::endl;
@@ -156,9 +159,7 @@ t_msg	Server::parseMsg(std::string fullMsg)
 		args = fullMsg.substr(firstSpace + 1);
 	}
 
-	
 	/* 5. busco si tiene trailing ':' y lo separo */
-
 	std::size_t trailingPos = args.find(':');
 	if (trailingPos != std::string::npos)
 	{
@@ -170,8 +171,7 @@ t_msg	Server::parseMsg(std::string fullMsg)
 
 	while(!args.empty() && msg.params.size() < 13)
 	{
-		size_t pos = args.find(' '); 
-
+		size_t pos = args.find(' ');
 		std::string token; // guardamos el siguiente param
 
 		// Si no hemos encontrado más espacios → el resto del string es un token completo

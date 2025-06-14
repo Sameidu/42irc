@@ -1,5 +1,10 @@
 #include <Server.hpp>
 
+void	Server::initCmds()
+{
+	_fCommands.insert(std::pair<std::string, FCmd>("PASS", &Server::CmPass));
+
+}	
 /* TODO: archivo totalmente inutil por el momento e incompleto */
 
 
@@ -15,13 +20,33 @@
 	los parametros dependen de cada comando si son utiles o necesarios
 */
 
-
-void Server::handleCommand(t_msg& msg, int fd)
+void	Server::answerCLient(int status, t_msg& msg, int fdClient)
 {
+	/* TODO: dependiendo el codigo de respuesta crear un msg diferente MAPA?*/
+	std::string msgToClient = "hola";
 
+	std::string uwu = (":ircserver.com" + status + _clients[fdClient]->getNickname() + ":" + msgToClient + "\r\n");
+
+	if (send(fdClient, &uwu, sizeof(uwu) , MSG_EOR) < 0)
+			throw std::runtime_error("Error: sending msg to client");
 }
 
-int Server::CmNick()
+void Server::handleCommand(t_msg& msg, int client)
+{
+	int status;
+
+	/* TODO: mapa std::map< std::string, *func(t_msg, int) */
+	if (msg.command == "PASS")
+		status = CmPass(msg, client);
+	else if (msg.command == "NICK")
+		status = CmNick(msg, client);
+	else if (msg.command == "USER")
+		status = CmUser(msg, client);
+	
+	answerCLient(status, msg, client);
+}
+
+int Server::CmNick(t_msg& msg, int client)
 {
 	if (arg.size() > MAX_CHAR_NICKNAME)
 	{
@@ -32,6 +57,16 @@ int Server::CmNick()
 	/* TODO: mirar si hay otro nickname igual*/
     _clients[fdClient]->setNickname(args);
 	return true;
+}
+
+int Server::CmUser(t_msg& msg, int fd)
+{
+
+}
+
+int Server::CmPass(t_msg& msg, int fd)
+{
+
 }
 
 

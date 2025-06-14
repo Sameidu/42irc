@@ -23,6 +23,7 @@
 # include <iostream>
 # include <csignal>
 # include <cstdio>
+# include <utility>
 
 # include <Client.hpp>
 # include <Channel.hpp>
@@ -32,7 +33,8 @@ class Channel;
 
 # define	MAX_FDS	1024
 
-# define	RPL_WELCOME 001
+# define	RPL_WELCOME 		001
+# define 	ERR_PASSWDMISMATCH	464
 
 typedef struct	s_msg
 {
@@ -43,9 +45,11 @@ typedef struct	s_msg
 	std::string 				trailing;
 }  t_msg;
 
+
 class Server
 {
 	private:
+		typedef int (Server::*FCmd)(t_msg&, int);
 		const int							_port;
 		const std::string					_password;
 		bool								_running;
@@ -54,13 +58,21 @@ class Server
 		int									_socketFd;
 		sockaddr_in							_servAddr;
 		int									_epollFd;
-
+		std::map <std::string, FCmd>		_fCommands;
+		
 		void	connectNewClient();
 		void	disconnectClient(int fd);
 		t_msg	parseMsg(std::string msg);
 		void	readMsg(int fd);
 		void	manageServerInput();
 		void	handleCommand(t_msg& msg, int fd);
+		void	answerCLient(int status, t_msg& msg, int client);
+		void	initCmds();
+
+		/* COMMANDS */
+		int CmPass(t_msg& msg, int fd);
+		int CmNick(t_msg& msg, int fd);
+		int CmUser(t_msg& msg, int fd);
 
 	public:
 

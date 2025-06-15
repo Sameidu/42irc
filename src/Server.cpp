@@ -81,7 +81,7 @@ void Server::init() {
 		throw std::runtime_error("Error: when adding stdin to epoll instance");
 
 	/* 10. Create std::map for commands */
-	// initCmds();
+	initCmds();
 
 	/* NOTE:  11. Print server info */
 	std::cout << "Server initialized with the following parameters:" << std::endl;
@@ -212,7 +212,6 @@ t_msg	Server::parseMsg(std::string fullMsg)
 			msg.params.push_back(args);
 		}
 	}
-
 	return msg;
 }
 
@@ -248,9 +247,8 @@ void	Server::readMsg(int fd)
         std::cout << YELLOW << "REAL MSG: " << fullMsg << CLEAR << std::endl;
 
         t_msg parsedMsg = parseMsg(fullMsg); // Parsear el mensaje
-		/* TODO: ejecutar cada linea */
+		handleCommand(parsedMsg, fd);
     }
-
 }
 
 void Server::disconnectClient(int fd) {

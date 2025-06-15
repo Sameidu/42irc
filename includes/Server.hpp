@@ -44,6 +44,8 @@ class Channel;
 # define	ERR_ERRONEUSNICKNAME	432 // Si el nick contiene caracteres inválidos
 # define	ERR_NICKNAMEINUSE		433 // Si ya hay otro cliente con ese nick
 
+/* COMMANDOS */
+# define 	ERR_UNKNOWNCOMMAND		421 // comando desconocido
 
 typedef struct	s_msg
 {
@@ -58,7 +60,7 @@ typedef struct	s_msg
 class Server
 {
 	private:
-		typedef int (Server::*FCmd)(t_msg&, int);
+		typedef void (Server::*FCmd)(t_msg&, int);
 
 		const int							_port;
 		const std::string					_password;
@@ -76,13 +78,13 @@ class Server
 		void	readMsg(int fd);
 		void	manageServerInput();
 		void	handleCommand(t_msg& msg, int fd);
-		void	answerCLient(int status, t_msg& msg, int client);
+		void	answerCLient(int fdClient, int code, std::string msg);
 		void	initCmds();
 
 		/* COMMANDS */
-		int CmPass(t_msg& msg, int fd);
-		int CmNick(t_msg& msg, int fd);
-		int CmUser(t_msg& msg, int fd);
+		void CmPass(t_msg& msg, int fd);
+		void CmNick(t_msg& msg, int fd);
+		void CmUser(t_msg& msg, int fd);
 
 	public:
 

@@ -22,30 +22,27 @@ void	Server::initCmds()
 	los parametros dependen de cada comando si son utiles o necesarios
 */
 
-void	Server::answerCLient(int status, t_msg& msg, int fdClient)
+void	Server::answerCLient(int fdClient, int code, std::string msg)
 {
-	/* TODO: dependiendo el codigo de respuesta crear un msg diferente MAPA?*/
-	std::string msgToClient = "hola";
+	std::string msgBuilt = (":ircserver.com" + code + _clients[fdClient]->getNickname() + msg + "\r\n");
 
-	std::string uwu = (":ircserver.com" + status + _clients[fdClient]->getNickname() + ":" + msgToClient + "\r\n");
-
-	if (send(fdClient, &uwu, sizeof(uwu) , MSG_EOR) < 0)
+	if (send(fdClient, &msgBuilt, sizeof(msgBuilt) , MSG_EOR) < 0)
 			throw std::runtime_error("Error: sending msg to client");
 }
 
 void Server::handleCommand(t_msg& msg, int fdClient)
 {
-	int status;
+	std::map<std::string, FCmd>::iterator it = _fCommands.find(msg.command);
 
-	/* TODO: mapa std::map< std::string, *func(t_msg, int) */
-	if (msg.command == "PASS")
-		status = CmPass(msg, fdClient);
-	else if (msg.command == "NICK")
-		status = CmNick(msg, fdClient);
-	else if (msg.command == "USER")
-		status = CmUser(msg, fdClient);
-	
-	answerCLient(status, msg, fdClient);
+	if (it != _fCommands.end()) 
+	{
+		std::cout << it->first << std::endl;
+		FCmd func = it->second;
+		(this->*func)(msg, fdClient);
+	} 
+	//else
+	// 	answerCLient(fdClient, ERR_UNKNOWNCOMMAND, _clients[fdClient]->getNickname() + " :Unknown command");
+
 }
 
 /* TODO
@@ -58,14 +55,43 @@ sendError(int fd, int code, std::string msg)
 sendError(fdClient, 433, nick + " :Nickname is already in use");
 */
 
-int Server::CmNick(t_msg& msg, int fdClient)
+bool isLetter(char c) 
 {
-	/* TODO: me falta validad caracteres validos para el nick */
+    return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z');
+}
 
+bool isDigit(char c) 
+{
+    return (c >= '0' && c <= '9');
+}
+
+bool isSpecial(char c) 
+{
+    return (c == '[' || c == ']' || c == '\\' || c == '`' ||
+            c == '_' || c == '^' || c == '{' || c == '|' );
+}
+
+/* TODO: msg error esta mal */
+
+void Server::CmNick(t_msg& msg, int fdClient)
+{
 	if (msg.params.size() != 1)
-		return -1; /*TODO: msg error 2 many params o incorrect nickname ?? que hace irc */
+		answerCLient(fdClient, ERR_NONICKNAMEGIVEN, _clients[fdClient]->getNickname() + " :Nickname is already in use");	
+	/*TODO: msg error 2 many params o incorrect nickname ?? que hace irc */
+
 	if (msg.params[0].size() > MAX_CHAR_NICKNAME)
-		return -1; // TODO: error de demasiado alrgo el nickname
+		answerCLient(fdClient, ERR_ERRONEUSNICKNAME, _clients[fdClient]->getNickname() + " :Nickname is already in use");
+		 // TODO: error de demasiado alrgo el nickname
+
+	if (!isSpecial(msg.params[0][0]) && !isLetter(msg.params[0][0]))
+		answerCLient(fdClient, ERR_ERRONEUSNICKNAME, _clients[fdClient]->getNickname() + " :Nickname is already in use");	
+		 // invalid chars in nickname
+	for (std::size_t i = 1; i < msg.params[0].size(); i++)
+	{
+		char c = msg.params[0][i];
+		if (!isLetter(c) && !isSpecial(c) && !isDigit(c) && c != '-')
+			answerCLient(fdClient, ERR_ERRONEUSNICKNAME, _clients[fdClient]->getNickname() + " :Nickname is already in use");	
+	}
 	
 	std::map<int, Client*>::iterator	it;
 	for (it = _clients.begin(); it != _clients.end(); ++it)
@@ -73,68 +99,28 @@ int Server::CmNick(t_msg& msg, int fdClient)
 		if (it->first == fdClient)
 			continue ;
 		else if (it->second->getNickname() == msg.params[0])
-			return -1; // TODO: erorr same nick
+			answerCLient(fdClient, ERR_NICKNAMEINUSE, _clients[fdClient]->getNickname() + " :Password incorrect");	
+			// TODO: erorr same nick
 	}
 
     _clients[fdClient]->setNickname(msg.params[0]);
-
-	return 1;
 }
 
-int Server::CmUser(t_msg& msg, int fd)
+void	 Server::CmUser(t_msg& msg, int fdClient)
 {
-
+	_clients[fdClient]->setUsername(msg.params[0]);
 }
 
-int Server::CmPass(t_msg& msg, int fd)
+void Server::CmPass(t_msg& msg, int fdClient)
 {
+	if (_password != msg.params[0])
+	{
+		answerCLient(fdClient, ERR_PASSWDMISMATCH, _clients[fdClient]->getNickname() + " :Nickname is already in use");	
+		std::cout << BLUE << "UWUWUWUWU" << CLEAR << std::endl;
 
+	}
+	//else
+	//	answerCLient(fdClient, RPL_WELCOME, _clients[fdClient]->getNickname() + " :Welcome to the IRC network, angela");	
+	/* TODO: No he verificado todo aun solo contraseña*/
 }
 
-
-void	Server::createUserForClient(std::string args, std::string command, int fdClient)
-{
-	/* el cliente tiene que mandar exactamente estos comando en orden PASS, NICK, USER */
-	if (_clients[fdClient]->getIsConnect() == 0 && command == "PASS")
-	{
-		/* Solo tiene 3 intentos */
-		if ( args == _password )
-		{
-			_clients[fdClient]->setIsConnect(1);
-			if (send(fdClient, "Correct password, now enter your unique nickname\n", 50 , MSG_EOR) < 0)
-				throw std::runtime_error("Error: sending msg to client");
-		}
-		else
-		{
-			if (send(fdClient, "Incorrect password, try again\n", 31 , MSG_EOR) < 0)
-				throw std::runtime_error("Error: sending msg to client");
-			if (_clients[fdClient]->getTimesWrongPass() < MAX_PASS_TRY)
-			{
-				// TODO: cerrar el cliente??
-				std::cout << "DEBERIA DE PARAR" << std::endl;				}
-			else
-				_clients[fdClient]->setTimesWrongPass(_clients[fdClient]->getTimesWrongPass() + 1);
-		}
-	}
-	else if (_clients[fdClient]->getIsConnect() == 1 && command == "NICK")
-	{
-		if (isCorrectNickname(args, fdClient))
-		{
-			_clients[fdClient]->setIsConnect(2);
-			_clients[fdClient]->setNickname(args);
-			if (send(fdClient, "Nick OK, now enter your user\n", 30 , MSG_EOR) < 0)
-				throw std::runtime_error("Error: sending msg to client");
-		}
-	}
-	else if (_clients[fdClient]->getIsConnect() == 2 && command == "USER")
-	{
-		_clients[fdClient]->setIsConnect(3);
-		_clients[fdClient]->setUsername(args);
-		if (send(fdClient, "You are connected to the server\n", 33 , MSG_EOR) < 0)
-			throw std::runtime_error("Error: sending msg to client");
-		/* TODO: Upon success, the client will receive an RPL_WELCOME (for users)*/
-	}
-	else
-		std::cout << "you are not connected to the server" << std::endl;
-		/* TODO: mandar msg al cliente?*/
-}

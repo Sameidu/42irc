@@ -38,6 +38,7 @@ class Channel;
 
 /* PASS */
 # define 	ERR_PASSWDMISMATCH		464
+# define	ERR_ALREADYREGISTRED	-1 // TODO no se que codigo es 
 
 /* NICK */
 # define	ERR_NONICKNAMEGIVEN		431 // Si no se da parámetro

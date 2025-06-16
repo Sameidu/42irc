@@ -1,4 +1,7 @@
 #include <Server.hpp>
+#include <iostream>
+#include <sstream>
+#include <string>
 
 void	Server::initCmds()
 {
@@ -7,31 +10,35 @@ void	Server::initCmds()
 	_fCommands.insert(std::pair<std::string, FCmd>("USER", &Server::CmUser));
 }
 
-/* TODO: archivo totalmente inutil por el momento e incompleto */
-
-
-/*
-	Un mensaje IRC puede tener hasta 15 parámetros en total:
-
-	14 "middle" parameters → los que van separados por espacios
-
-	1 "trailing" parameter → que empieza con : → puede contener espacios
-
-	si el param empieza con #canal es un canal si no empieza con nada es el target angela a quien se loq ueires enviar
-
-	los parametros dependen de cada comando si son utiles o necesarios
-*/
-
 void	Server::answerCLient(int fdClient, int code, std::string msg)
 {
-	std::string msgBuilt = (":ircserver.com" + code + _clients[fdClient]->getNickname() + msg + "\r\n");
+	std::stringstream	ss;
+	ss << code;
+	std::string codeS = ss.str();
 
-	if (send(fdClient, &msgBuilt, sizeof(msgBuilt) , MSG_EOR) < 0)
+	std::string msgBuilt = (":ircserver.com" + codeS + _clients[fdClient]->getNickname() + msg + "\r\n");
+
+	
+	if (send(fdClient, msgBuilt.c_str(), msgBuilt.size() , MSG_EOR) < 0)
 			throw std::runtime_error("Error: sending msg to client");
 }
 
 void Server::handleCommand(t_msg& msg, int fdClient)
 {
+	/*if (_clients[fdClient]->getIsConnect() != 3)
+	{
+		CmPass(msg, fdClient);
+		CmNick(msg, fdClient);
+		CmUser(msg, fdClient);
+		if (_clients[fdClient]->getIsConnect() == 3)
+			answerCLient(fdClient, RPL_WELCOME, _clients[fdClient]->getNickname() + " :Welcome to the IRC network, angela");
+		else
+		{
+			// disconnectClient(fdClient);
+			return ;
+		}
+	}*/
+
 	std::map<std::string, FCmd>::iterator it = _fCommands.find(msg.command);
 
 	if (it != _fCommands.end()) 
@@ -40,8 +47,8 @@ void Server::handleCommand(t_msg& msg, int fdClient)
 		FCmd func = it->second;
 		(this->*func)(msg, fdClient);
 	} 
-	//else
-	// 	answerCLient(fdClient, ERR_UNKNOWNCOMMAND, _clients[fdClient]->getNickname() + " :Unknown command");
+	else
+		answerCLient(fdClient, ERR_UNKNOWNCOMMAND, _clients[fdClient]->getNickname() + " :Unknown command");
 
 }
 
@@ -103,24 +110,29 @@ void Server::CmNick(t_msg& msg, int fdClient)
 			// TODO: erorr same nick
 	}
 
+	if (_clients[fdClient]->getIsConnect() == 1)
+		_clients[fdClient]->setIsConnect(_clients[fdClient]->getIsConnect() + 1);
     _clients[fdClient]->setNickname(msg.params[0]);
 }
 
-void	 Server::CmUser(t_msg& msg, int fdClient)
+void	Server::CmUser(t_msg& msg, int fdClient)
 {
+	if (_clients[fdClient]->getIsConnect() == 2)
+		_clients[fdClient]->setIsConnect(_clients[fdClient]->getIsConnect() + 1);
 	_clients[fdClient]->setUsername(msg.params[0]);
 }
 
-void Server::CmPass(t_msg& msg, int fdClient)
+void	Server::CmPass(t_msg& msg, int fdClient)
 {
+	std::cout << "----------->>>>>>" << _password << std::endl;
+	std::cout << "----------->>>>>>" << msg.params[0] << std::endl;
 	if (_password != msg.params[0])
 	{
-		answerCLient(fdClient, ERR_PASSWDMISMATCH, _clients[fdClient]->getNickname() + " :Nickname is already in use");	
-		std::cout << BLUE << "UWUWUWUWU" << CLEAR << std::endl;
-
+		answerCLient(fdClient, ERR_PASSWDMISMATCH, _clients[fdClient]->getNickname() + " :Password incorrect");	
+		std::cout << RED << "contraseña incorrecta" << CLEAR << std::endl;
 	}
-	//else
-	//	answerCLient(fdClient, RPL_WELCOME, _clients[fdClient]->getNickname() + " :Welcome to the IRC network, angela");	
+	else
+		_clients[fdClient]->setIsConnect(1);
 	/* TODO: No he verificado todo aun solo contraseña*/
 }
 

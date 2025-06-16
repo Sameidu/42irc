@@ -239,10 +239,10 @@ void	Server::readMsg(int fd)
     std::size_t pos;
 
     // Mientras haya un mensaje completo (terminado en "\r\n")
-    while ((pos = buffer.find("\r\n")) != std::string::npos)
+    while ((pos = buffer.find("\n")) != std::string::npos)
     {
         std::string fullMsg = buffer.substr(0, pos); // ya no esta \r\n
-        buffer.erase(0, pos + 2); // Eliminar mensaje + "\r\n" para seguir el bucle
+        buffer.erase(0, pos + 1); // Eliminar mensaje + "\r\n" para seguir el bucle
 
         std::cout << YELLOW << "REAL MSG: " << fullMsg << CLEAR << std::endl;
 

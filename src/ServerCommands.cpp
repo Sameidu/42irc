@@ -18,7 +18,6 @@ void	Server::answerCLient(int fdClient, int code, std::string msg)
 
 	std::string msgBuilt = (":ircserver.com" + codeS + _clients[fdClient]->getNickname() + msg + "\r\n");
 
-	
 	if (send(fdClient, msgBuilt.c_str(), msgBuilt.size() , MSG_EOR) < 0)
 			throw std::runtime_error("Error: sending msg to client");
 }

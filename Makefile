@@ -22,6 +22,7 @@ VPATH := src:src
 SRC     :=	main.cpp \
 			Client.cpp \
 			Server.cpp \
+			Channel.cpp \
 			utils.cpp \
 			ServerCommands.cpp
 

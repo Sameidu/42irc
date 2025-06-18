@@ -17,5 +17,7 @@
 
 /* UTILS */
 bool	setNonBlocking(int fd);
+bool    isSpecial(char c);
+std::string to_string(const T & value);
 
 #endif 

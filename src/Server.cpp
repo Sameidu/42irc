@@ -19,6 +19,12 @@ Server::~Server() {
 			delete it->second;
 		}
 	}
+
+	for (std::map<std::string, Channel *>::iterator it = _channel.begin(); it != _channel.end(); ++it) {
+		if (it->second)
+			delete it->second;
+	}
+
 	_clients.clear();
 	if (_socketFd >= 0)
 		close(_socketFd);
@@ -71,6 +77,9 @@ void Server::init() {
 	ev.data.fd = _socketFd; 
 	if (epoll_ctl(_epollFd, EPOLL_CTL_ADD, _socketFd, &ev) < 0)
 		throw std::runtime_error("Error: when adding the socket to the epoll instance");
+
+	// Channel *generalChannel = new Channel("general");
+	// _channel.insert(std::pair<std::string, Channel *>("general", generalChannel));
 
 	/* 9. Add stdin to epoll instance */
 	fcntl(STDIN_FILENO, F_SETFL, O_NONBLOCK);
@@ -257,6 +266,8 @@ void Server::disconnectClient(int fd) {
 	
 	std::cout << "Disconnecting client with fd: " << fd << std::endl;
 	Client *client = _clients[fd];
+	for (std::map<std::string, Channel *>::iterator it = _channel.begin(); it != _channel.end(); ++it)
+		_channel[it->first]->disconnectUser(client);	
 	if (epoll_ctl(_epollFd, EPOLL_CTL_DEL, fd, NULL) < 0)
 		throw std::runtime_error("Error: when removing client from epoll instance");
 	if (close(fd) < 0) 
@@ -282,6 +293,15 @@ void  Server::manageServerInput() {
 					  << ", Username: " << it->second->getUsername() 
 					  << ", Nickname: " << it->second->getNickname() 
 					  << ", Realname: " << it->second->getRealname() << " ]"
+					  << std::endl;
+		}
+	}
+	else if (input == "channels") {
+		std::cout << "Available channels: " << std::endl;
+		for (std::map<std::string, Channel *>::iterator it = _channel.begin(); it != _channel.end(); ++it) {
+			std::cout << "[ Channel name: " << it->first 
+					  << ", Max users: " << it->second->getMaxUsers() 
+					  << ", Password: " << it->second->getPass() << " ]"
 					  << std::endl;
 		}
 	}

@@ -24,6 +24,8 @@
 # include <csignal>
 # include <cstdio>
 # include <utility>
+# include <string>
+# include <sstream>
 
 # include <Client.hpp>
 # include <Channel.hpp>
@@ -45,7 +47,12 @@ class Channel;
 # define	ERR_ERRONEUSNICKNAME	432 // Si el nick contiene caracteres inválidos
 # define	ERR_NICKNAMEINUSE		433 // Si ya hay otro cliente con ese nick
 
-/* COMMANDOS */
+/* LIST */
+# define	RPL_LISTSTART 321
+# define	RPL_LISTITEM 322
+# define	RPL_LISTEND 323
+
+/* COMMANDS */
 # define 	ERR_UNKNOWNCOMMAND		421 // comando desconocido
 
 typedef struct	s_msg
@@ -79,13 +86,15 @@ class Server
 		void	readMsg(int fd);
 		void	manageServerInput();
 		void	handleCommand(t_msg& msg, int fd);
-		void	answerCLient(int fdClient, int code, std::string msg);
+		void	answerCLient(int fdClient, int code, const std::string& msg);
 		void	initCmds();
 
 		/* COMMANDS */
 		void CmPass(t_msg& msg, int fd);
 		void CmNick(t_msg& msg, int fd);
 		void CmUser(t_msg& msg, int fd);
+		void CmCAP(t_msg& msg, int fd);
+		void CmList(t_msg &msg, int fd);
 
 	public:
 

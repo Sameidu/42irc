@@ -1,45 +1,61 @@
 #include <Server.hpp>
-#include <iostream>
-#include <sstream>
-#include <string>
 
 void	Server::initCmds()
 {
 	_fCommands.insert(std::pair<std::string, FCmd>("PASS", &Server::CmPass));
 	_fCommands.insert(std::pair<std::string, FCmd>("NICK", &Server::CmNick));
 	_fCommands.insert(std::pair<std::string, FCmd>("USER", &Server::CmUser));
+	_fCommands.insert(std::pair<std::string, FCmd>("CAP", &Server::CmCAP));
+	//_fCommands.insert(std::pair<std::string, FCmd>("JOIN", &Server::CmJoin));
+	_fCommands.insert(std::pair<std::string, FCmd>("LIST", &Server::CmList));
+	//_fCommands.insert(std::pair<std::string, FCmd>("PRIVMSG", &Server::CmPrivMsg));
 }
 
-void	Server::answerCLient(int fdClient, int code, std::string msg)
+void Server::answerCLient(int fdClient, int code, const std::string& msg)
 {
-	std::stringstream	ss;
-	ss << code;
-	std::string codeS = ss.str();
+	std::ostringstream ss;
+	ss << std::setfill('0') << std::setw(3) << code;  // código en 3 dígitos
+	std::string codeStr = ss.str();
 
-	std::string msgBuilt = (":ircserver.com" + codeS + _clients[fdClient]->getNickname() + msg + "\r\n");
+	std::string nickname = _clients[fdClient]->getNickname();
+	if (nickname.empty())
+		nickname = "unknown";
+	std::string response = ":ircserver.com " + codeStr + " " + nickname + " :" + msg + "\r\n";
 
-	if (send(fdClient, msgBuilt.c_str(), msgBuilt.size() , MSG_EOR) < 0)
-			throw std::runtime_error("Error: sending msg to client");
+	std::cout << GREEN << response << CLEAR << std::endl;
+	if (send(fdClient, response.c_str(), response.size(), MSG_EOR) < 0)
+		throw std::runtime_error("Error: sending msg to client");
 }
 
 void Server::handleCommand(t_msg& msg, int fdClient)
 {
-	/*if (_clients[fdClient]->getIsConnect() != 3)
+	if (_clients[fdClient]->getIsConnect() != 3)
 	{
-		CmPass(msg, fdClient);
-		CmNick(msg, fdClient);
-		CmUser(msg, fdClient);
-		if (_clients[fdClient]->getIsConnect() == 3)
-			answerCLient(fdClient, RPL_WELCOME, _clients[fdClient]->getNickname() + " :Welcome to the IRC network, angela");
-		else
-		{
-			// disconnectClient(fdClient);
-			return ;
+		if (msg.command == "CAP") {
+			CmCAP(msg, fdClient);
+			return;
 		}
-	}*/
+		if (_clients[fdClient]->getIsConnect() == 0 && msg.command == "PASS")
+			CmPass(msg, fdClient);
+		else if (_clients[fdClient]->getIsConnect() == 1 && msg.command == "NICK")
+			CmNick(msg, fdClient);
+		else if (_clients[fdClient]->getIsConnect() == 2  && msg.command == "USER")
+			CmUser(msg, fdClient);
+		else
+			return ;
+
+		if (_clients[fdClient]->getIsConnect() == 3) {
+			if (_channel.find("#general") == _channel.end()) {
+				Channel *newChannel = new Channel("#general");
+				_channel.insert(std::pair<std::string, Channel*>("#general", newChannel));
+			}
+			_channel["#general"]->newChannelUser(_clients[fdClient]);
+			answerCLient(fdClient, RPL_WELCOME, "Welcome to the IRC network, angela");
+		}
+	}
 
 	std::map<std::string, FCmd>::iterator it = _fCommands.find(msg.command);
-
+	// TODO: Si el cliente no está validado no se debe ejecutar ningún comando
 	if (it != _fCommands.end()) 
 	{
 		std::cout << it->first << std::endl;
@@ -51,52 +67,26 @@ void Server::handleCommand(t_msg& msg, int fdClient)
 
 }
 
-/* TODO
-nickname   =  ( letter / special ) *8( letter / digit / special / "-" )
-letter     =  A-Z a-z
-digit      =  0-9
-special    =  [ ] \ ` _ ^ { | }
-isValidNickname(string)
-sendError(int fd, int code, std::string msg)
-sendError(fdClient, 433, nick + " :Nickname is already in use");
-*/
-
-bool isLetter(char c) 
-{
-    return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z');
-}
-
-bool isDigit(char c) 
-{
-    return (c >= '0' && c <= '9');
-}
-
-bool isSpecial(char c) 
-{
-    return (c == '[' || c == ']' || c == '\\' || c == '`' ||
-            c == '_' || c == '^' || c == '{' || c == '|' );
-}
-
 /* TODO: msg error esta mal */
 
 void Server::CmNick(t_msg& msg, int fdClient)
 {
 	if (msg.params.size() != 1)
-		answerCLient(fdClient, ERR_NONICKNAMEGIVEN, _clients[fdClient]->getNickname() + " :Nickname is already in use");	
+		answerCLient(fdClient, ERR_NONICKNAMEGIVEN, "Nickname is already in use");	
 	/*TODO: msg error 2 many params o incorrect nickname ?? que hace irc */
 
 	if (msg.params[0].size() > MAX_CHAR_NICKNAME)
-		answerCLient(fdClient, ERR_ERRONEUSNICKNAME, _clients[fdClient]->getNickname() + " :Nickname is already in use");
+		answerCLient(fdClient, ERR_ERRONEUSNICKNAME, "Nickname is already in use");
 		 // TODO: error de demasiado alrgo el nickname
 
-	if (!isSpecial(msg.params[0][0]) && !isLetter(msg.params[0][0]))
-		answerCLient(fdClient, ERR_ERRONEUSNICKNAME, _clients[fdClient]->getNickname() + " :Nickname is already in use");	
+	if (!isSpecial(msg.params[0][0]) && !isalpha(msg.params[0][0]))
+		answerCLient(fdClient, ERR_ERRONEUSNICKNAME, "Nickname is already in use");	
 		 // invalid chars in nickname
 	for (std::size_t i = 1; i < msg.params[0].size(); i++)
 	{
 		char c = msg.params[0][i];
-		if (!isLetter(c) && !isSpecial(c) && !isDigit(c) && c != '-')
-			answerCLient(fdClient, ERR_ERRONEUSNICKNAME, _clients[fdClient]->getNickname() + " :Nickname is already in use");	
+		if (!isalpha(c) && !isSpecial(c) && !isdigit(c) && c != '-')
+			answerCLient(fdClient, ERR_ERRONEUSNICKNAME, "Nickname is already in use");	
 	}
 	
 	std::map<int, Client*>::iterator	it;
@@ -105,7 +95,7 @@ void Server::CmNick(t_msg& msg, int fdClient)
 		if (it->first == fdClient)
 			continue ;
 		else if (it->second->getNickname() == msg.params[0])
-			answerCLient(fdClient, ERR_NICKNAMEINUSE, _clients[fdClient]->getNickname() + " :Password incorrect");	
+			answerCLient(fdClient, ERR_NICKNAMEINUSE, "Password incorrect");	
 			// TODO: erorr same nick
 	}
 
@@ -127,7 +117,7 @@ void	Server::CmPass(t_msg& msg, int fdClient)
 	std::cout << "----------->>>>>>" << msg.params[0] << std::endl;
 	if (_password != msg.params[0])
 	{
-		answerCLient(fdClient, ERR_PASSWDMISMATCH, _clients[fdClient]->getNickname() + " :Password incorrect");	
+		answerCLient(fdClient, ERR_PASSWDMISMATCH, "Password incorrect");
 		std::cout << RED << "contraseña incorrecta" << CLEAR << std::endl;
 	}
 	else
@@ -135,3 +125,29 @@ void	Server::CmPass(t_msg& msg, int fdClient)
 	/* TODO: No he verificado todo aun solo contraseña*/
 }
 
+void Server::CmCAP(t_msg& msg, int fd)
+{
+	if (msg.params.size() < 2 || msg.params[0] != "LS")
+	{
+		answerCLient(fd, ERR_UNKNOWNCOMMAND, "Unknown command");
+		return ;
+	}
+	answerCLient(fd, 302, "multi-prefix");
+}
+
+void Server::CmList(t_msg &msg, int fd) {
+	if (msg.params.size() > 1) {
+		answerCLient(fd, ERR_UNKNOWNCOMMAND,"Too many parameters");
+		return;
+	}
+	if (_channel.empty()) {
+		answerCLient(fd, RPL_LISTEND, "End of /LIST");
+		return;
+	}
+	answerCLient(fd, RPL_LISTSTART, "Channel  Users  Name");
+	for (std::map<std::string, Channel *>::iterator it = _channel.begin(); it != _channel.end(); ++it) {
+		std::string response = it->first + " " + to_string(it->second->getUserCount()) + " " + it->second->getName();
+		answerCLient(fd, RPL_LISTITEM, response);
+	}
+	answerCLient(fd, RPL_LISTEND, "End of /LIST");
+}

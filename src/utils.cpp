@@ -2,6 +2,13 @@
 #include <irc.hpp>
 #include <fcntl.h> 
 
+template<typename T>
+std::string to_string(const T & value) {
+    std::ostringstream oss;
+    oss << value;
+    return oss.str();
+}
+
 bool	setNonBlocking(int fd)
 {
 	/* Firts take the existing flags from the file */
@@ -14,4 +21,10 @@ bool	setNonBlocking(int fd)
 		return false;
 	
 	return true;
+}
+
+bool isSpecial(char c)
+{
+    return (c == '[' || c == ']' || c == '\\' || c == '`' ||
+            c == '_' || c == '^' || c == '{' || c == '|' );
 }

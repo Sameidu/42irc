@@ -3,60 +3,12 @@
 #ifndef SERVER_HPP
 # define SERVER_HPP
 
-# define RED     "\033[91;1m"
-# define GREEN   "\033[92;1m"
-# define YELLOW  "\033[93;1m"
-# define BLUE    "\033[94;1m"
-# define PINK    "\033[95;1m"
-# define CLEAR   "\033[0m"
-
 # include <irc.hpp>
-# include <sys/socket.h>
-# include <netinet/in.h>
-# include <exception>
-# include <unistd.h>
-# include <cstring>
-# include <fcntl.h>
-# include <cerrno>
-# include <sys/epoll.h>
-# include <arpa/inet.h>
-# include <iostream>
-# include <csignal>
-# include <cstdio>
-# include <utility>
-# include <string>
-# include <sstream>
-
 # include <Client.hpp>
 # include <Channel.hpp>
 
 class Client;
 class Channel;
-
-# define	MAX_FDS	1024
-
-/* CONNECT SUCCESS */
-# define	RPL_WELCOME 			001
-
-/* PASS */
-# define 	ERR_PASSWDMISMATCH		464
-# define	ERR_ALREADYREGISTRED	-1 // TODO no se que codigo es 
-
-/* NICK */
-# define	ERR_NONICKNAMEGIVEN		431 // Si no se da parámetro
-# define	ERR_ERRONEUSNICKNAME	432 // Si el nick contiene caracteres inválidos
-# define	ERR_NICKNAMEINUSE		433 // Si ya hay otro cliente con ese nick
-# define	ERR_NICKCOLLISION		
-# define	ERR_UNAVAILRESOURCE
-# define	ERR_RESTRICTED
-
-/* LIST */
-# define	RPL_LISTSTART 321
-# define	RPL_LISTITEM 322
-# define	RPL_LISTEND 323
-
-/* COMMANDS */
-# define 	ERR_UNKNOWNCOMMAND		421 // comando desconocido
 
 typedef struct	s_msg
 {
@@ -82,6 +34,7 @@ class Server
 		sockaddr_in							_servAddr;
 		int									_epollFd;
 		std::map <std::string, FCmd>		_fCommands;
+		int 								_maxChannelUsers;
 		
 		void	connectNewClient();
 		void	disconnectClient(int fd);
@@ -89,16 +42,25 @@ class Server
 		void	readMsg(int fd);
 		void	manageServerInput();
 		void	handleCommand(t_msg& msg, int fd);
-		void	answerCLient(int fdClient, int code, const std::string& msg);
+		void	answerClient(int fdClient, int code, const std::string &target, const std::string& msg);
 		void	initCmds();
 		void	sendMsgToClient(int fd, const std::string &cmd, const std::string &channel, const std::string &msg);
+
 
 		/* COMMANDS */
 		void CmPass(t_msg& msg, int fd);
 		void CmNick(t_msg& msg, int fd);
 		void CmUser(t_msg& msg, int fd);
 		void CmCAP(t_msg& msg, int fd);
+		void CmPrivMsg(t_msg &msg, int fd);
+		void CmJoin(t_msg &msg, int fd);
 		void CmList(t_msg &msg, int fd);
+		void CmPart(t_msg &msg, int fd);
+		void CmInvite(t_msg &msg, int fd);
+		void CmKick(t_msg &msg, int fd);
+		void CmTopic(t_msg &msg, int fd);
+		void CmMode(t_msg &msg, int fd);
+		void CmNames(t_msg &msg, int fd);
 
 	public:
 
@@ -115,5 +77,24 @@ class Server
 };
 
 bool	setNonBlocking(int fd);
+bool	isSpecial(char c);
+
+template<typename T>
+std::string to_string(const T &value) {
+    std::ostringstream oss;
+    oss << value;
+    return oss.str();
+}
+
+template<typename T>
+void splitCmd(const std::string &cmd, T &result, const char del) {
+	size_t start = 0;
+	size_t comma;
+	while ((comma = cmd.find(del, start)) != std::string::npos) {
+		result.push_back(cmd.substr(start, comma - start));
+		start = comma + 1;
+	}
+	result.push_back(cmd.substr(start));
+}
 
 #endif

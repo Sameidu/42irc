@@ -17,6 +17,7 @@ class Channel
 		std::string				_topic;
 		int						_ownerFd;
 		
+		// TODO: Pensar si añadir modo canal oculto
 		std::set<char>			_mode;
 		std::map<int, Client *>	_banned;
 		std::map<int, Client *>	_invited;
@@ -32,14 +33,28 @@ class Channel
 		const std::string &getName() const;
 		const std::string &getPass() const;
 		const size_t &getMaxUsers() const;
+		const std::string &getTopic() const;
 		size_t getUserCount() const;
+		int getUserFd(const std::string &nick) const;
 
 		void setName(const std::string &name);
 		void setMaxUsers(const size_t &maxUsers);
 		void setPass(const std::string &pass);
+		void setTopic(const std::string &topic);
+		void setMode(const char &mode);
+		void unsetMode(const char &mode);
 
+		bool hasMode(const char &mode) const;
+		bool hasUser(int fd) const;
+		bool hasUser(const std::string &nick) const;
+		bool isBanned(int fd) const;
+		bool isInvited(int fd) const;
+		bool isAdmin(int fd) const;
+
+		std::string listUsers();
 		void newChannelUser(Client *client);
 		void disconnectUser(Client *client);
+		void broadcastMessage(int fd, const std::string &cmd, const std::string &user, const std::string &msg) const;
 };
 
 #endif 

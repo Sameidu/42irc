@@ -1,4 +1,9 @@
 #include <Server.hpp>
+#include <iostream>
+#include <sstream>
+#include <string>
+
+// TODO: Añadir y tener en cuenta los modos 's' y 'p' (secreto y privado) de los canales
 
 void	Server::initCmds()
 {
@@ -6,23 +11,25 @@ void	Server::initCmds()
 	_fCommands.insert(std::pair<std::string, FCmd>("NICK", &Server::CmNick));
 	_fCommands.insert(std::pair<std::string, FCmd>("USER", &Server::CmUser));
 	_fCommands.insert(std::pair<std::string, FCmd>("CAP", &Server::CmCAP));
-	//_fCommands.insert(std::pair<std::string, FCmd>("JOIN", &Server::CmJoin));
+	_fCommands.insert(std::pair<std::string, FCmd>("JOIN", &Server::CmJoin));
 	_fCommands.insert(std::pair<std::string, FCmd>("LIST", &Server::CmList));
+	_fCommands.insert(std::pair<std::string, FCmd>("PART", &Server::CmPart));
+	_fCommands.insert(std::pair<std::string, FCmd>("NAMES", &Server::CmNames));
+	_fCommands.insert(std::pair<std::string, FCmd>("TOPIC", &Server::CmTopic)); // Solo para admins
+	// _fCommands.insert(std::pair<std::string, FCmd>("KICK", &Server::CmKick)); // Solo para admins
+	// _fCommands.insert(std::pair<std::string, FCmd>("INVITE", &Server::CmInvite)); // Solo para admins
+	// _fCommands.insert(std::pair<std::string, FCmd>("MODE", &Server::CmMode)); // Solo para admins
 	//_fCommands.insert(std::pair<std::string, FCmd>("PRIVMSG", &Server::CmPrivMsg));
+	//_fCommands.insert(std::pair<std::string, FCmd>("QUIT", &Server::CmQuit));
+
 }
 
-void Server::sendMsgToClient(int fd, const std::string &cmd, const std::string &channel, const std::string &msg) {
-	std::string prefix = ":" + _clients[fd]->getNickname() + "!" + _clients[fd]->getUsername() + "@localhost";
-	std::string response = prefix + " " + cmd + " " + channel;
-	
-	if (!msg.empty())
-		response += " :" + msg;
-	response += "\r\n";
-	if (send(fd, response.c_str(), response.size(), MSG_EOR) < 0)
-		throw std::runtime_error("Error: sending msg to client");
-}
+// Ahora si envia la resuesta bien al cliente
+/* No poner en los mensajes enviados cuando se llame a esta función ni el nick
+ ni los ":" porque sino  el cliente no lo interpreta bien 
+ Solo el mensaje que se desee enviar (Como mucho un espacio al principio) */
 
-void Server::answerCLient(int fdClient, int code, const std::string& msg)
+void Server::answerClient(int fdClient, int code, const std::string &target, const std::string &msg)
 {
 	std::ostringstream ss;
 	ss << std::setfill('0') << std::setw(3) << code;  // código en 3 dígitos
@@ -31,10 +38,42 @@ void Server::answerCLient(int fdClient, int code, const std::string& msg)
 	std::string nickname = _clients[fdClient]->getNickname();
 	if (nickname.empty())
 		nickname = "unknown";
-	std::string response = ":ircserver.com " + codeStr + " " + nickname + " :" + msg + "\r\n";
+	std::string response = ":ircserver.com " + codeStr + " " + nickname;
+	
+	if (!target.empty())
+		response += " " + target;
+	response += " :" + msg + "\r\n";
 
 	std::cout << GREEN << response << CLEAR << std::endl;
 	if (send(fdClient, response.c_str(), response.size(), MSG_EOR) < 0)
+		throw std::runtime_error("Error: sending msg to client");
+}
+
+/**
+ * @brief Envía un mensaje IRC directo a un cliente, sin código numérico.
+ *
+ * Esta función está pensada para comandos como PRIVMSG o PART, que requieren
+ * mensajes directos entre usuarios o notificaciones de eventos, y no respuestas
+ * del servidor con códigos numéricos. Por eso, el mensaje se construye siguiendo
+ * el formato estándar de IRC con prefijo (nick!user@host), comando, destino y mensaje,
+ * pero sin incluir ningún código de respuesta numérico, ya que el cliente no espera
+ * ni interpreta códigos en este tipo de mensajes.
+ *
+ * @param fd        Descriptor del cliente destinatario.
+ * @param cmd       Comando IRC (por ejemplo, "PRIVMSG", "PART").
+ * @param channel   Canal o destino del mensaje.
+ * @param msg       Contenido del mensaje.
+ */
+
+void Server::sendMsgToClient(int fd, const std::string &cmd, const std::string &channel, const std::string &msg) {
+	std::string prefix = ":" + _clients[fd]->getNickname() + "!" + _clients[fd]->getUsername() + "@localhost";
+	std::string response = prefix + " " + cmd + " " + channel;
+	
+	if (!msg.empty())
+		response += " :" + msg;
+	response += "\r\n";
+	std::cout << BLUE << response << CLEAR << std::endl;
+	if (send(fd, response.c_str(), response.size(), MSG_EOR) < 0)
 		throw std::runtime_error("Error: sending msg to client");
 }
 
@@ -61,7 +100,7 @@ void Server::handleCommand(t_msg& msg, int fdClient)
 				_channel.insert(std::pair<std::string, Channel*>("#general", newChannel));
 			}
 			_channel["#general"]->newChannelUser(_clients[fdClient]);
-			answerCLient(fdClient, RPL_WELCOME, "Welcome to the IRC network, angela");
+			answerClient(fdClient, RPL_WELCOME, "", "Welcome to the IRC network, angela");
 		}
 	}
 
@@ -74,90 +113,6 @@ void Server::handleCommand(t_msg& msg, int fdClient)
 		(this->*func)(msg, fdClient);
 	} 
 	else
-		answerCLient(fdClient, ERR_UNKNOWNCOMMAND, _clients[fdClient]->getNickname() + " :Unknown command");
+		answerClient(fdClient, ERR_UNKNOWNCOMMAND, "", _clients[fdClient]->getNickname() + " Unknown command");
 
-}
-
-void Server::CmNick(t_msg& msg, int fdClient)
-{
-	if (msg.params.empty() && msg.trailing.size() == 0)
-		answerCLient(fdClient, ERR_NONICKNAMEGIVEN, "No nickname given"); // ok, no manda nada
-	else if (msg.params.empty() && msg.trailing.size() != 0)
-		msg.params[0] = msg.trailing;
-
-	if (msg.params[0].size() > MAX_CHAR_NICKNAME)
-		answerCLient(fdClient, ERR_ERRONEUSNICKNAME, "Erroneus nickname"); // ok
-
-	if (!isSpecial(msg.params[0][0]) && !isalpha(msg.params[0][0]))
-		answerCLient(fdClient, ERR_ERRONEUSNICKNAME, "Erroneus nickname");	// ok
-
-	for (std::size_t i = 1; i < msg.params[0].size(); i++)
-	{
-		char c = msg.params[0][i];
-		if (!isalpha(c) && !isSpecial(c) && !isdigit(c) && c != '-')
-			answerCLient(fdClient, ERR_ERRONEUSNICKNAME, "Erroneus nickname");	// ok
-	}
-	
-	std::map<int, Client*>::iterator	it;
-	for (it = _clients.begin(); it != _clients.end(); ++it)
-	{
-		if (it->first == fdClient)
-			continue ;
-		else if (it->second->getNickname() == msg.params[0])
-			answerCLient(fdClient, ERR_NICKNAMEINUSE, "Nickname is already in use"); // ok
-	}
-
-	if (_clients[fdClient]->getIsConnect() == 1)
-		_clients[fdClient]->setIsConnect(_clients[fdClient]->getIsConnect() + 1);
-    _clients[fdClient]->setNickname(msg.params[0]);
-	/* TODO: cuando se cambia el nick hay que mandar un msg de confirmacion al cliente y un msg,
-		de que se cambio su nick a todos los canales en los que esta*/
-}
-
-void	Server::CmUser(t_msg& msg, int fdClient)
-{
-	if (_clients[fdClient]->getIsConnect() == 2)
-		_clients[fdClient]->setIsConnect(_clients[fdClient]->getIsConnect() + 1);
-	_clients[fdClient]->setUsername(msg.params[0]);
-}
-
-void	Server::CmPass(t_msg& msg, int fdClient)
-{
-	std::cout << "----------->>>>>>" << _password << std::endl;
-	std::cout << "----------->>>>>>" << msg.params[0] << std::endl;
-	if (_password != msg.params[0])
-	{
-		answerCLient(fdClient, ERR_PASSWDMISMATCH, "Password incorrect");
-		std::cout << RED << "contraseña incorrecta" << CLEAR << std::endl;
-	}
-	else
-		_clients[fdClient]->setIsConnect(1);
-	/* TODO: No he verificado todo aun solo contraseña*/
-}
-
-void Server::CmCAP(t_msg& msg, int fd)
-{
-	if (msg.params.size() < 2 || msg.params[0] != "LS")
-	{
-		answerCLient(fd, ERR_UNKNOWNCOMMAND, "Unknown command");
-		return ;
-	}
-	answerCLient(fd, 302, "multi-prefix");
-}
-
-void Server::CmList(t_msg &msg, int fd) {
-	if (msg.params.size() > 1) {
-		answerCLient(fd, ERR_UNKNOWNCOMMAND,"Too many parameters");
-		return;
-	}
-	if (_channel.empty()) {
-		answerCLient(fd, RPL_LISTEND, "End of /LIST");
-		return;
-	}
-	answerCLient(fd, RPL_LISTSTART, "Channel  Users  Name");
-	for (std::map<std::string, Channel *>::iterator it = _channel.begin(); it != _channel.end(); ++it) {
-		std::string response = it->first + " " + to_string(it->second->getUserCount()) + " " + it->second->getName();
-		answerCLient(fd, RPL_LISTITEM, response);
-	}
-	answerCLient(fd, RPL_LISTEND, "End of /LIST");
 }

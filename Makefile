@@ -17,20 +17,34 @@ DIR_INCLUDES := includes
 CC      := c++
 CFLAGS  := -Wall -Wextra -Werror -std=c++98 -I$(DIR_INCLUDES) -g3 -fsanitize=address,leak,undefined
 
-VPATH := src:src
+VPATH := src src/cmds
 
 SRC     :=	main.cpp \
 			Client.cpp \
 			Server.cpp \
 			Channel.cpp \
 			utils.cpp \
-			ServerCommands.cpp
+			ServerCommands.cpp \
+			CmCAP.cpp \
+			CmInvite.cpp \
+			CmJoin.cpp \
+			CmKick.cpp \
+			CmList.cpp \
+			CmMode.cpp \
+			CmNames.cpp \
+			CmNick.cpp \
+			CmPart.cpp \
+			CmPass.cpp \
+			CmTopic.cpp \
+			CmUser.cpp
+
 
 OBJ     := $(SRC:%.cpp=$(OBJ_DIR)/%.o)
 
 DEPS := includes/Client.hpp \
        includes/Server.hpp \
-       includes/irc.hpp
+       includes/irc.hpp \
+	   includes/Channel.hpp
 
 # ============================
 # 🧱 BUILD RULES

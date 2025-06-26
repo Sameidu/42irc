@@ -7,7 +7,7 @@ const int &Server::getPort() const { return _port; }
 const std::string &Server::getPassword() const { return _password; }
 
 Server::Server( const int &port, const std::string &password )
-	: _port(port), _password(password), _running(true), _socketFd(-1), _epollFd(-1) {}
+	: _port(port), _password(password), _running(true), _socketFd(-1), _epollFd(-1), _maxChannelUsers(15) {}
 
 Server::~Server() {
 	for (std::map<int, Client *>::iterator it = _clients.begin(); it != _clients.end(); ++it) {
@@ -287,6 +287,7 @@ void  Server::manageServerInput() {
 		std::cout << PINK << "Server is shutting down..." << CLEAR << std::endl;
 	}
 	else if (input == "clients") {
+		// TODO: Darle una vuelta a la información facilitada
 		std::cout << "Connected clients: " << std::endl;
 		for (std::map<int, Client *>::iterator it = _clients.begin(); it != _clients.end(); ++it) {
 			std::cout << "[ Client fd: " << it->first
@@ -297,6 +298,7 @@ void  Server::manageServerInput() {
 		}
 	}
 	else if (input == "channels") {
+		// TODO: Darle una vuelta a la información facilitada
 		std::cout << "Available channels: " << std::endl;
 		for (std::map<std::string, Channel *>::iterator it = _channel.begin(); it != _channel.end(); ++it) {
 			std::cout << "[ Channel name: " << it->first 
@@ -305,11 +307,32 @@ void  Server::manageServerInput() {
 					  << std::endl;
 		}
 	}
+	else if (input == "clear" || input == "cls")
+		std::cout << "\033[2J\033[1;1H"; // Clear the console
+	else if (input == "limit") {
+		// Este va a ser solo para ver el limite actual
+		// TODO: Crear setLimit para modificar el valor (Actualizar a todos los usuarios conectados)
+		std::cout << "Max channels per user: " << _maxChannelUsers << std::endl;
+	}
+	else if (input == "version") {
+		std::cout << "Server version: 1.0.0" << std::endl;
+	}
+	else if (input == "add_admin") {
+		// Este y el siguiente no se si los veo necesarios
+	}
+	else if (input == "del_admin") {
+	}
 	else if (input == "help") {
 		std::cout << "Available commands:" << std::endl;
 		std::cout << "- exit/quit: Stop the server." << std::endl;
-		std::cout << "- clients: List connected clients. (Esto furula a medias)" << std::endl;
-		std::cout << "- channels: List channels. (Mentira, no funciona de momento)" << std::endl;
+		std::cout << "- clients: List connected clients." << std::endl;
+		std::cout << "- channels: List channels." << std::endl;
+		std::cout << "- clear/cls: Clear the console." << std::endl;
+		std::cout << "- limit: Show max channels per user." << std::endl;
+		std::cout << "- version: Show server version." << std::endl;
+		std::cout << "- add_admin: Add an admin to a channel." << std::endl;
+		std::cout << "- del_admin: Remove an admin from a channel." << std::endl;
+		std::cout << "- help: Show this help message." << std::endl;
 	}
 	else {
 		std::cout << RED << "Command not recognized. Type 'help' for a list of commands." << CLEAR << std::endl;
@@ -320,7 +343,6 @@ void Server::run() {
 	epoll_event events[MAX_EVENTS];
 
 	while (_running) {
-		// TODO: Hay que manejar señales en el server.
 		std::cout << PINK << "Waiting for events..." << CLEAR << std::endl << std::endl;
 		int numEvents = epoll_wait(_epollFd, events, MAX_EVENTS, -1);
 		if (numEvents < 0) {

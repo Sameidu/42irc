@@ -11,6 +11,17 @@ void	Server::initCmds()
 	//_fCommands.insert(std::pair<std::string, FCmd>("PRIVMSG", &Server::CmPrivMsg));
 }
 
+void Server::sendMsgToClient(int fd, const std::string &cmd, const std::string &channel, const std::string &msg) {
+	std::string prefix = ":" + _clients[fd]->getNickname() + "!" + _clients[fd]->getUsername() + "@localhost";
+	std::string response = prefix + " " + cmd + " " + channel;
+	
+	if (!msg.empty())
+		response += " :" + msg;
+	response += "\r\n";
+	if (send(fd, response.c_str(), response.size(), MSG_EOR) < 0)
+		throw std::runtime_error("Error: sending msg to client");
+}
+
 void Server::answerCLient(int fdClient, int code, const std::string& msg)
 {
 	std::ostringstream ss;
@@ -67,26 +78,24 @@ void Server::handleCommand(t_msg& msg, int fdClient)
 
 }
 
-/* TODO: msg error esta mal */
-
 void Server::CmNick(t_msg& msg, int fdClient)
 {
-	if (msg.params.size() != 1)
-		answerCLient(fdClient, ERR_NONICKNAMEGIVEN, "Nickname is already in use");	
-	/*TODO: msg error 2 many params o incorrect nickname ?? que hace irc */
+	if (msg.params.empty() && msg.trailing.size() == 0)
+		answerCLient(fdClient, ERR_NONICKNAMEGIVEN, "No nickname given"); // ok, no manda nada
+	else if (msg.params.empty() && msg.trailing.size() != 0)
+		msg.params[0] = msg.trailing;
 
 	if (msg.params[0].size() > MAX_CHAR_NICKNAME)
-		answerCLient(fdClient, ERR_ERRONEUSNICKNAME, "Nickname is already in use");
-		 // TODO: error de demasiado alrgo el nickname
+		answerCLient(fdClient, ERR_ERRONEUSNICKNAME, "Erroneus nickname"); // ok
 
 	if (!isSpecial(msg.params[0][0]) && !isalpha(msg.params[0][0]))
-		answerCLient(fdClient, ERR_ERRONEUSNICKNAME, "Nickname is already in use");	
-		 // invalid chars in nickname
+		answerCLient(fdClient, ERR_ERRONEUSNICKNAME, "Erroneus nickname");	// ok
+
 	for (std::size_t i = 1; i < msg.params[0].size(); i++)
 	{
 		char c = msg.params[0][i];
 		if (!isalpha(c) && !isSpecial(c) && !isdigit(c) && c != '-')
-			answerCLient(fdClient, ERR_ERRONEUSNICKNAME, "Nickname is already in use");	
+			answerCLient(fdClient, ERR_ERRONEUSNICKNAME, "Erroneus nickname");	// ok
 	}
 	
 	std::map<int, Client*>::iterator	it;
@@ -95,13 +104,14 @@ void Server::CmNick(t_msg& msg, int fdClient)
 		if (it->first == fdClient)
 			continue ;
 		else if (it->second->getNickname() == msg.params[0])
-			answerCLient(fdClient, ERR_NICKNAMEINUSE, "Password incorrect");	
-			// TODO: erorr same nick
+			answerCLient(fdClient, ERR_NICKNAMEINUSE, "Nickname is already in use"); // ok
 	}
 
 	if (_clients[fdClient]->getIsConnect() == 1)
 		_clients[fdClient]->setIsConnect(_clients[fdClient]->getIsConnect() + 1);
     _clients[fdClient]->setNickname(msg.params[0]);
+	/* TODO: cuando se cambia el nick hay que mandar un msg de confirmacion al cliente y un msg,
+		de que se cambio su nick a todos los canales en los que esta*/
 }
 
 void	Server::CmUser(t_msg& msg, int fdClient)

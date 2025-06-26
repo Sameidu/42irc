@@ -46,6 +46,9 @@ class Channel;
 # define	ERR_NONICKNAMEGIVEN		431 // Si no se da parámetro
 # define	ERR_ERRONEUSNICKNAME	432 // Si el nick contiene caracteres inválidos
 # define	ERR_NICKNAMEINUSE		433 // Si ya hay otro cliente con ese nick
+# define	ERR_NICKCOLLISION		
+# define	ERR_UNAVAILRESOURCE
+# define	ERR_RESTRICTED
 
 /* LIST */
 # define	RPL_LISTSTART 321
@@ -88,6 +91,7 @@ class Server
 		void	handleCommand(t_msg& msg, int fd);
 		void	answerCLient(int fdClient, int code, const std::string& msg);
 		void	initCmds();
+		void	sendMsgToClient(int fd, const std::string &cmd, const std::string &channel, const std::string &msg);
 
 		/* COMMANDS */
 		void CmPass(t_msg& msg, int fd);

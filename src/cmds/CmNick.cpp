@@ -32,6 +32,8 @@ void Server::CmNick(t_msg& msg, int fdClient)
 	if (_clients[fdClient]->getIsConnect() == 1)
 		_clients[fdClient]->setIsConnect(_clients[fdClient]->getIsConnect() + 1);
     _clients[fdClient]->setNickname(msg.params[0]);
+
+	
 	/* TODO: cuando se cambia el nick hay que mandar un msg de confirmacion al cliente y un msg,
 		de que se cambio su nick a todos los canales en los que esta*/
 }

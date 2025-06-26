@@ -1,27 +1,23 @@
 #pragma once
 
-#ifndef CLIENT_HPP
-# define CLIENT_HPP
-
 # include <irc.hpp>
 # include <sys/socket.h>
 # include <netinet/in.h>
+# include "Channel.hpp"
 
 class Client
 {
 	private:
-		/* TODO: var status admin, normal user*/
-		std::string		_userName;
-		std::string 	_nickName;
-		std::string 	_realName;
-		const int		_clientFd;
-		sockaddr_in	*	_clientAddr;
-		int				_isConnect;
-		int				_timesWrongPass;
-		std::string		_bufferMsgClient;
+		std::string				_userName;
+		std::string 			_nickName;
+		std::string 			_realName;
+		const int				_clientFd;
+		sockaddr_in	*			_clientAddr;
+		int						_isConnect;
+		std::string				_bufferMsgClient;
+		std::vector<Channel*>	_channels;
 
 	public:
-		// Client(const int fd);
 		Client(const int fd, sockaddr_in	*clientAddr);
 		~Client();
 
@@ -31,19 +27,16 @@ class Client
 		const std::string &getRealname() const;
 		const int &getIsConnect() const;
 		int getFd() const;
-		const int &getTimesWrongPass() const;
 		std::string &getBufferMsgClient();
+		std::vector<Channel*>& getChannels();
 
 		// Setters
 		void setUsername(const std::string &username);
 		void setNickname(const std::string &nickname);
 		void setRealname(const std::string &realname);
 		void setIsConnect(const int &isConnect);
-		void setTimesWrongPass(const int & timesWrongPass);
 		void setBufferMsgClient(const std::string &msg);
 
 };
 
 // TODO: Comprobar si es necesario compartir funciones.
-
-#endif 

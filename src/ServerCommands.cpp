@@ -116,3 +116,5 @@ void Server::handleCommand(t_msg& msg, int fdClient)
 		answerClient(fdClient, ERR_UNKNOWNCOMMAND, "", _clients[fdClient]->getNickname() + " Unknown command");
 
 }
+
+

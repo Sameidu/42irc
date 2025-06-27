@@ -1,5 +1,18 @@
 #include <Server.hpp>
 
+void	Server::sendMsgChangeNick(std::string newNick, int fdClient)
+{
+	sendMsgToClient(fdClient, "NICK", newNick, "");
+
+	std::vector<Channel*>& channels = _clients[fdClient]->getChannels();
+
+	for (std::vector<Channel*>::iterator it = channels.begin(); it != channels.end(); ++it)
+    {
+        Channel* ch = *it;
+		ch->broadcastMessageNochan(fdClient, "NICK", newNick);
+	}
+}
+
 void Server::CmNick(t_msg& msg, int fdClient)
 {
 	if (msg.params.empty() && msg.trailing.size() == 0)
@@ -31,9 +44,9 @@ void Server::CmNick(t_msg& msg, int fdClient)
 
 	if (_clients[fdClient]->getIsConnect() == 1)
 		_clients[fdClient]->setIsConnect(_clients[fdClient]->getIsConnect() + 1);
-    _clients[fdClient]->setNickname(msg.params[0]);
-
 	
-	/* TODO: cuando se cambia el nick hay que mandar un msg de confirmacion al cliente y un msg,
-		de que se cambio su nick a todos los canales en los que esta*/
+	if (_clients[fdClient]->getIsConnect() == 3)
+		sendMsgChangeNick(msg.params[0], fdClient);
+		
+	_clients[fdClient]->setNickname(msg.params[0]);
 }

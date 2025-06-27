@@ -50,6 +50,7 @@ class Server
 		/* COMMANDS */
 		void CmPass(t_msg& msg, int fd);
 		void CmNick(t_msg& msg, int fd);
+		void sendMsgChangeNick(std::string newNick, int fdClient);
 		void CmUser(t_msg& msg, int fd);
 		void CmCAP(t_msg& msg, int fd);
 		void CmPrivMsg(t_msg &msg, int fd);

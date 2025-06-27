@@ -77,6 +77,7 @@ void Channel::newChannelUser(Client *client) {
 	}
 	// En cualquier caso, se añade el cliente a la lista de usuarios del canal
 	_users.insert(std::make_pair(client->getFd(), client));
+	client->joinChannel(this);
 	std::cout << "User " << client->getNickname() << " connected to channel " << _name << std::endl;
 }
 
@@ -104,6 +105,21 @@ void Channel::disconnectUser(Client *client) {
 		_admins.insert(std::make_pair(_ownerFd, _users[_ownerFd]));
 	}
 	_users.erase(client->getFd());
+	client->leaveChannel(this);
+}
+
+void Channel::broadcastMessageNochan(int fd, const std::string &cmd, const std::string &msg) const {
+	std::string prefix = ":" + _users.at(fd)->getNickname() + "!" + _users.at(fd)->getUsername() + "@localhost";
+	std::string message = prefix + " " + cmd;
+	
+	if (!msg.empty())
+		message += " :" + msg;
+	message += "\r\n";
+	for (std::map<int, Client *>::const_iterator it = _users.begin(); it != _users.end(); ++it) {
+		if (it->first != fd)
+			if (send(it->first, message.c_str(), message.size(), MSG_EOR) < 0)
+				throw std::runtime_error("Error: sending msg to client");
+	}
 }
 
 void Channel::broadcastMessage(int fd, const std::string &cmd, const std::string &user, const std::string &msg) const {
@@ -117,7 +133,8 @@ void Channel::broadcastMessage(int fd, const std::string &cmd, const std::string
 	message += "\r\n";
 	for (std::map<int, Client *>::const_iterator it = _users.begin(); it != _users.end(); ++it) {
 		if (it->first != fd)
-			send(it->first, message.c_str(), message.size(), MSG_EOR);
+			if (send(it->first, message.c_str(), message.size(), MSG_EOR) < 0)
+				throw std::runtime_error("Error: sending msg to client");
 	}
 }
 

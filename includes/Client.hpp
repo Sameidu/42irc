@@ -5,6 +5,8 @@
 # include <netinet/in.h>
 # include "Channel.hpp"
 
+class Channel;
+
 class Client
 {
 	private:
@@ -36,6 +38,9 @@ class Client
 		void setRealname(const std::string &realname);
 		void setIsConnect(const int &isConnect);
 		void setBufferMsgClient(const std::string &msg);
+
+    	void joinChannel(Channel* ch);
+    	void leaveChannel(Channel* ch);
 
 };
 

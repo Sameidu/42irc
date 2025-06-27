@@ -34,3 +34,13 @@ void Client::setRealname(const std::string &realname) { _realName = realname; }
 void Client::setIsConnect(const int &isConnect) { _isConnect = isConnect; }
 
 void Client::setBufferMsgClient(const std::string &msg) { _bufferMsgClient = msg; }
+
+
+
+void Client::joinChannel(Channel* ch) {
+    _channels.push_back(ch);
+}
+
+void Client::leaveChannel(Channel* ch) {
+    _channels.erase(std::remove(_channels.begin(), _channels.end(), ch),_channels.end());
+}

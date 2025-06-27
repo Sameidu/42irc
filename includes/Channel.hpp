@@ -5,8 +5,9 @@
 
 # include <irc.hpp>
 # include <set>
-#include <Client.hpp>
+# include <Client.hpp>
 
+class Client;
 
 class Channel
 {
@@ -55,6 +56,7 @@ class Channel
 		void newChannelUser(Client *client);
 		void disconnectUser(Client *client);
 		void broadcastMessage(int fd, const std::string &cmd, const std::string &user, const std::string &msg) const;
+		void broadcastMessageNochan(int fd, const std::string &cmd, const std::string &msg) const; // TODO: no se si es el mejor nombre de funcion
 };
 
 #endif 

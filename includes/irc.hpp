@@ -83,6 +83,11 @@
 # define RPL_TOPIC					332
 # define RPL_TOPICWHOTIME			333
 
+/* INVITE */
+# define ERR_NOSUCHNICK				401
+# define ERR_USERONCHANNEL			443 
+# define RPL_INVITING				341
+
 /* COMMANDOS */
 # define 	ERR_UNKNOWNCOMMAND		421 // comando desconocido
 

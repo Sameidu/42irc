@@ -16,8 +16,8 @@ void	Server::initCmds()
 	_fCommands.insert(std::pair<std::string, FCmd>("PART", &Server::CmPart));
 	_fCommands.insert(std::pair<std::string, FCmd>("NAMES", &Server::CmNames));
 	_fCommands.insert(std::pair<std::string, FCmd>("TOPIC", &Server::CmTopic)); // Solo para admins
-	// _fCommands.insert(std::pair<std::string, FCmd>("KICK", &Server::CmKick)); // Solo para admins
-	// _fCommands.insert(std::pair<std::string, FCmd>("INVITE", &Server::CmInvite)); // Solo para admins
+	_fCommands.insert(std::pair<std::string, FCmd>("KICK", &Server::CmKick)); // Solo para admins
+	_fCommands.insert(std::pair<std::string, FCmd>("INVITE", &Server::CmInvite)); // Solo para admins
 	// _fCommands.insert(std::pair<std::string, FCmd>("MODE", &Server::CmMode)); // Solo para admins
 	//_fCommands.insert(std::pair<std::string, FCmd>("PRIVMSG", &Server::CmPrivMsg));
 	//_fCommands.insert(std::pair<std::string, FCmd>("QUIT", &Server::CmQuit));
@@ -99,7 +99,10 @@ void Server::handleCommand(t_msg& msg, int fdClient)
 				Channel *newChannel = new Channel("#general");
 				_channel.insert(std::pair<std::string, Channel*>("#general", newChannel));
 			}
-			_channel["#general"]->newChannelUser(_clients[fdClient]);
+			t_msg join;
+			join.command = "JOIN";
+			join.params.push_back("#general");
+			CmJoin(join, fdClient);
 			answerClient(fdClient, RPL_WELCOME, "", "Welcome to the IRC network, angela");
 		}
 	}

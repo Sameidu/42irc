@@ -108,6 +108,18 @@ void Channel::disconnectUser(Client *client) {
 	client->leaveChannel(this);
 }
 
+void Channel::addInvitedList(Client *client) {
+	if (_invited.find(client->getFd()) != _invited.end())
+		throw std::runtime_error("User already invited to this channel.");
+	_invited.insert(std::make_pair(client->getFd(), client));
+}
+
+void Channel::removeInvitedList(Client *client) {
+	if (_invited.find(client->getFd()) == _invited.end())
+		throw std::runtime_error("User not invited to this channel.");
+	_invited.erase(client->getFd());
+}
+
 void Channel::broadcastMessageNochan(int fd, const std::string &cmd, const std::string &msg) const {
 	std::string prefix = ":" + _users.at(fd)->getNickname() + "!" + _users.at(fd)->getUsername() + "@localhost";
 	std::string message = prefix + " " + cmd;

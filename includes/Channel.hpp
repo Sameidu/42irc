@@ -53,6 +53,8 @@ class Channel
 		bool isAdmin(int fd) const;
 
 		std::string listUsers();
+		void addInvitedList(Client *client);
+		void removeInvitedList(Client *client);
 		void newChannelUser(Client *client);
 		void disconnectUser(Client *client);
 		void broadcastMessage(int fd, const std::string &cmd, const std::string &user, const std::string &msg) const;

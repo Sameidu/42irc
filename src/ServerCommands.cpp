@@ -24,11 +24,6 @@ void	Server::initCmds()
 
 }
 
-// Ahora si envia la resuesta bien al cliente
-/* No poner en los mensajes enviados cuando se llame a esta función ni el nick
- ni los ":" porque sino  el cliente no lo interpreta bien 
- Solo el mensaje que se desee enviar (Como mucho un espacio al principio) */
-
 void Server::answerClient(int fdClient, int code, const std::string &target, const std::string &msg)
 {
 	std::ostringstream ss;

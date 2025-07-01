@@ -36,6 +36,11 @@ class Server
 		int									_epollFd;
 		std::map <std::string, FCmd>		_fCommands;
 		int 								_maxChannelUsers;
+		std::string 						_servername = "ircserver.com"; /* TODO: cambiar en todos los prefix a esta var en vez poner el nombre con "ircserv"*/
+		std::string							_version = "ChatServ-1.0";
+		std::string							_creationDate;
+		std::string							_userModes = "ix"; /* TODO: esto cuales son? */
+		std::string							_chanModes = "ntlk"; /* TODO: esto cuales son? */
 		
 		void	connectNewClient();
 		void	disconnectClient(int fd);
@@ -82,6 +87,7 @@ class Server
 
 bool	setNonBlocking(int fd);
 bool	isSpecial(char c);
+std::string currentDateTimeString();
 
 template<typename T>
 std::string to_string(const T &value) {

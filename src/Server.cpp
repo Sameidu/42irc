@@ -92,6 +92,9 @@ void Server::init() {
 	/* 10. Create std::map for commands */
 	initCmds();
 
+	/* 11. Init var Creating date */
+	_creationDate = currentDateTimeString();
+
 	/* NOTE:  11. Print server info */
 	std::cout << "Server initialized with the following parameters:" << std::endl;
 	std::cout << "Port: " << _port << std::endl;

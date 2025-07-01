@@ -28,3 +28,11 @@ bool isSpecial(char c)
     return (c == '[' || c == ']' || c == '\\' || c == '`' ||
             c == '_' || c == '^' || c == '{' || c == '|' );
 }
+
+std::string currentDateTimeString() 
+{
+    std::time_t t = std::time(nullptr);
+    char buf[64];
+    std::strftime(buf, sizeof(buf), "%b %d %Y at %H:%M:%S", std::localtime(&t));
+    return buf;
+}

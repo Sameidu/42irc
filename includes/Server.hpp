@@ -17,6 +17,7 @@ typedef struct	s_msg
 	std::string					command;
 	std::vector<std::string>	params;
 	std::string 				trailing;
+	bool						hasTrailing;
 }  t_msg;
 
 
@@ -45,6 +46,8 @@ class Server
 		void	answerClient(int fdClient, int code, const std::string &target, const std::string& msg);
 		void	initCmds();
 		void	sendMsgToClient(int fd, const std::string &cmd, const std::string &channel, const std::string &msg);
+		void	sendWelcomeMsg(int fdClient);
+		void	joinGeneralChannel(int fdClient);
 
 
 		/* COMMANDS */

@@ -173,6 +173,7 @@ t_msg	Server::parseMsg(std::string fullMsg)
 	if (trailingPos != std::string::npos)
 	{
 		msg.trailing = args.substr(trailingPos + 1);
+		msg.hasTrailing = true;
 		args = args.substr(0, trailingPos); // quito el trailing si hay 
 	}
 	

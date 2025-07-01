@@ -77,35 +77,59 @@ void Server::sendMsgToClient(int fd, const std::string &cmd, const std::string &
 		throw std::runtime_error("Error: sending msg to client");
 }
 
+void	Server::sendWelcomeMsg(int fdClient)
+{
+	/*Client& c = *_clients[fd];
+    // 001
+    answerClient(fd, RPL_WELCOME, c.getNickname(),
+                 "Welcome to the IRC network, " + c.getNickname());
+    // 002
+    answerClient(fd, RPL_YOURHOST, c.getNickname(),
+                 "Your host is " + _servername + ", running version " + _version);
+    // 003
+    answerClient(fd, RPL_CREATED, c.getNickname(),
+                 "This server was created " + _creationDate);
+    // 004
+    answerClient(fd, RPL_MYINFO, c.getNickname(),
+                 _servername + " " + _version + " " + _userModes + " " + _chanModes);
+    // 005 
+    sendISupport(fd);*/
+	answerClient(fdClient, RPL_WELCOME, "", "Welcome to the IRC network, " + _clients[fdClient]->getNickname());
+}
+
+void	Server::joinGeneralChannel(int fdClient)
+{
+	if (_channel.find("#general") == _channel.end()) {
+		Channel *newChannel = new Channel("#general");
+		_channel.insert(std::pair<std::string, Channel*>("#general", newChannel));
+	}
+	_channel["#general"]->newChannelUser(_clients[fdClient]);
+}
+
 void Server::handleCommand(t_msg& msg, int fdClient)
 {
-	if (_clients[fdClient]->getIsConnect() != 3)
+	if (_clients[fdClient]->getRegistrationState() != RS_Registered)
 	{
 		if (msg.command == "CAP") {
 			CmCAP(msg, fdClient);
 			return;
 		}
-		if (_clients[fdClient]->getIsConnect() == 0 && msg.command == "PASS")
+		if (_clients[fdClient]->getRegistrationState() == RS_NoPass && msg.command == "PASS")
 			CmPass(msg, fdClient);
-		else if (_clients[fdClient]->getIsConnect() == 1 && msg.command == "NICK")
+		else if (_clients[fdClient]->getRegistrationState() == RS_PassValidated && msg.command == "NICK")
 			CmNick(msg, fdClient);
-		else if (_clients[fdClient]->getIsConnect() == 2  && msg.command == "USER")
+		else if (_clients[fdClient]->getRegistrationState() == RS_NickValidated  && msg.command == "USER")
 			CmUser(msg, fdClient);
-		else
-			return ;
 
-		if (_clients[fdClient]->getIsConnect() == 3) {
-			if (_channel.find("#general") == _channel.end()) {
-				Channel *newChannel = new Channel("#general");
-				_channel.insert(std::pair<std::string, Channel*>("#general", newChannel));
-			}
-			_channel["#general"]->newChannelUser(_clients[fdClient]);
-			answerClient(fdClient, RPL_WELCOME, "", "Welcome to the IRC network, angela");
+		if (_clients[fdClient]->getRegistrationState() == RS_Registered)
+		{
+			sendWelcomeMsg(fdClient);
+			joinGeneralChannel(fdClient);
 		}
+		return ;
 	}
 
 	std::map<std::string, FCmd>::iterator it = _fCommands.find(msg.command);
-	// TODO: Si el cliente no está validado no se debe ejecutar ningún comando
 	if (it != _fCommands.end()) 
 	{
 		std::cout << it->first << std::endl;
@@ -114,7 +138,6 @@ void Server::handleCommand(t_msg& msg, int fdClient)
 	} 
 	else
 		answerClient(fdClient, ERR_UNKNOWNCOMMAND, "", _clients[fdClient]->getNickname() + " Unknown command");
-
 }
 
 

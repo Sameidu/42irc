@@ -13,7 +13,7 @@ void Server::CmInvite(t_msg &msg, int fd) {
 	 */
 	if (msg.params.size() != 2) {
 		answerClient(fd, ERR_NEEDMOREPARAMS, "INVITE", "Not enough parameters");
-		return;
+		return ;
 	}
 
 	int invited = -1;
@@ -25,38 +25,37 @@ void Server::CmInvite(t_msg &msg, int fd) {
 	}
 	if (invited == -1) {
 		answerClient(fd, ERR_NOSUCHNICK, msg.params[0], "No such nick/channel");
-		return;
+		return ;
 	}
 	if (_channel.find(msg.params[1]) == _channel.end()) {
 		answerClient(fd, ERR_NOTONCHANNEL, msg.params[1], "You're not on that channel");
-		return;
+		return ;
 	}
 	if (!_channel[msg.params[1]]->hasUser(_clients[fd]->getNickname())) {
 		answerClient(fd, ERR_NOTONCHANNEL, msg.params[1], "You're not on that channel");
-		return;
+		return ;
 	}
 	if (_channel[msg.params[1]]->hasUser(msg.params[0])) {
 		answerClient(fd, ERR_USERONCHANNEL, msg.params[0], "is already on channel");
-		return;
+		return ;
 	}
 	if (_channel[msg.params[1]]->hasMode('i') && !_channel[msg.params[1]]->isAdmin(fd)) {
 		answerClient(fd, ERR_INVITEONLYCHAN, msg.params[1], "Cannot invite to invite-only channel");
-		return;
+		return ;
 	}
 	if (_channel[msg.params[1]]->hasMode('l') && _channel[msg.params[1]]->getUserCount() >= _channel[msg.params[1]]->getMaxUsers()) {
 		answerClient(fd, ERR_CHANNELISFULL, msg.params[1], "Cannot invite to full channel");
-		return;
+		return ;
 	}
 	if (_channel[msg.params[1]]->hasMode('b') && _channel[msg.params[1]]->isBanned(invited)) {
 		answerClient(fd, ERR_BANNEDFROMCHAN, msg.params[1], "Cannot invite banned user");
-		return;
+		return ;
 	}
 	if (_channel[msg.params[1]]->isInvited(invited)) {
 		answerClient(fd, ERR_USERONCHANNEL, msg.params[0], "is already invited to channel");
-		return;
+		return ;
 	}
 	_channel[msg.params[1]]->addInvitedList(_clients[invited]);
-	// TODO: Corregir el mensaje de invitación
-	sendMsgToClient(invited, "INVITE", _clients[invited]->getNickname(), msg.params[1]);
+	msgClientToClient(fd, invited, "INVITE", msg.params[1]);
 	answerClient(fd, RPL_INVITING, _clients[invited]->getNickname(), msg.params[1]);
 }

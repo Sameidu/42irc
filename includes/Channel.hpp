@@ -37,6 +37,7 @@ class Channel
 		const std::string &getTopic() const;
 		size_t getUserCount() const;
 		int getUserFd(const std::string &nick) const;
+		std::string getMode() const;
 
 		void setName(const std::string &name);
 		void setMaxUsers(const size_t &maxUsers);

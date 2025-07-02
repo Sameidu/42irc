@@ -12,7 +12,7 @@ void Server::CmJoin(t_msg &msg, int fd) {
 	 */
 	if (msg.params.size() < 1 || msg.params.size() > 2) {
 		answerClient(fd, ERR_NEEDMOREPARAMS, "JOIN", "Not enough parameters");
-		return;
+		return ;
 	}
 
 	std::vector<std::string> channels;
@@ -64,7 +64,7 @@ void Server::CmJoin(t_msg &msg, int fd) {
 				continue ;
 			}
 			// Comprobar que el canal no está lleno y puede unirse
-			if ( _channel[channels[i]]->getMaxUsers() > 0 && _channel[channels[i]]->getUserCount() >= _channel[channels[i]]->getMaxUsers()) {
+			if (_channel[channels[i]]->hasMode('l') && _channel[channels[i]]->getUserCount() >= _channel[channels[i]]->getMaxUsers()) {
 				answerClient(fd, ERR_CHANNELISFULL, channels[i], "Channel is full (+l)");
 				continue ;
 			}

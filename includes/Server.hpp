@@ -43,14 +43,16 @@ class Server
 		void	manageServerInput();
 		void	handleCommand(t_msg& msg, int fd);
 		void	answerClient(int fdClient, int code, const std::string &target, const std::string& msg);
+		void	answerClient(int fdClient, int code, char &target, const std::string& msg);
 		void	initCmds();
 		void	sendMsgToClient(int fd, const std::string &cmd, const std::string &channel, const std::string &msg);
+		void	msgClientToClient(int from, int to, const std::string &cmd, const std::string &msg);
 
 
 		/* COMMANDS */
+		void sendMsgChangeNick(std::string newNick, int fdClient);
 		void CmPass(t_msg& msg, int fd);
 		void CmNick(t_msg& msg, int fd);
-		void sendMsgChangeNick(std::string newNick, int fdClient);
 		void CmUser(t_msg& msg, int fd);
 		void CmCAP(t_msg& msg, int fd);
 		void CmPrivMsg(t_msg &msg, int fd);

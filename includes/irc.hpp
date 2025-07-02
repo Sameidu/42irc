@@ -88,6 +88,11 @@
 # define ERR_USERONCHANNEL			443 
 # define RPL_INVITING				341
 
+/* MODE */
+# define RPL_CHANNELMODEIS			324
+# define ERR_USERSDONTMATCH			502
+# define ERR_UNKNOWNMODE			472
+
 /* COMMANDOS */
 # define 	ERR_UNKNOWNCOMMAND		421 // comando desconocido
 

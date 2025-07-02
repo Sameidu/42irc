@@ -2,14 +2,15 @@
 
 void	Server::CmPass(t_msg& msg, int fdClient)
 {
-	std::cout << "----------->>>>>>" << _password << std::endl;
-	std::cout << "----------->>>>>>" << msg.params[0] << std::endl;
-	if (_password != msg.params[0])
-	{
+	if (_clients[fdClient]->getRegistrationState() == RS_Registered)
+		answerClient(fdClient, ERR_ALREADYREGISTERED, "",  "You may not reregister");
+		
+	else if (msg.params.size() < 1)
+		answerClient(fdClient, ERR_NEEDMOREPARAMS, "",  "Not enough parameters");
+
+	else if (_password != msg.params[0])
 		answerClient(fdClient, ERR_PASSWDMISMATCH, "", "Password incorrect");
-		std::cout << RED << "contraseña incorrecta" << CLEAR << std::endl;
-	}
+
 	else
-		_clients[fdClient]->setIsConnect(1);
-	/* TODO: No he verificado todo aun solo contraseña*/
+		_clients[fdClient]->setRegistrationState(RS_PassValidated);
 }

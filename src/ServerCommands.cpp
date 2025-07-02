@@ -24,11 +24,6 @@ void	Server::initCmds()
 
 }
 
-// Ahora si envia la resuesta bien al cliente
-/* No poner en los mensajes enviados cuando se llame a esta función ni el nick
- ni los ":" porque sino  el cliente no lo interpreta bien 
- Solo el mensaje que se desee enviar (Como mucho un espacio al principio) */
-
 void Server::answerClient(int fdClient, int code, const std::string &target, const std::string &msg)
 {
 	std::ostringstream ss;
@@ -106,38 +101,57 @@ void Server::msgClientToClient(int from, int to, const std::string &cmd, const s
 		throw std::runtime_error("Error: sending msg to client");
 }
 
+void	Server::sendWelcomeMsg(int fdClient)
+{
+	Client& c = *_clients[fdClient];
+
+	answerClient(fdClient, RPL_WELCOME, "", "Welcome to the IRC network, " + c.getNickname());
+	
+    answerClient(fdClient, RPL_YOURHOST, "", "Your host is " + _serverName + ", running version " + _version);
+
+    answerClient(fdClient, RPL_CREATED, "", "This server was created " + _creationDate);
+
+    answerClient(fdClient, RPL_MYINFO, "", _serverName + " " + _version + " " + _userModes + " " + _chanModes);
+
+    // TODO: sendISupport(fdClient); no es obligatorio y no me apetece hacerlo
+}
+
+void	Server::joinGeneralChannel(int fdClient)
+{
+	if (_channel.find("#general") == _channel.end()) {
+        Channel *newChannel = new Channel("#general");
+        _channel.insert(std::pair<std::string, Channel*>("#general", newChannel));
+    }
+    t_msg join;
+    join.command = "JOIN";
+    join.params.push_back("#general");
+    CmJoin(join, fdClient);
+}
+
 void Server::handleCommand(t_msg& msg, int fdClient)
 {
-	if (_clients[fdClient]->getIsConnect() != 3)
+	if (_clients[fdClient]->getRegistrationState() != RS_Registered)
 	{
 		if (msg.command == "CAP") {
 			CmCAP(msg, fdClient);
 			return ;
 		}
-		if (_clients[fdClient]->getIsConnect() == 0 && msg.command == "PASS")
+		if (_clients[fdClient]->getRegistrationState() == RS_NoPass && msg.command == "PASS")
 			CmPass(msg, fdClient);
-		else if (_clients[fdClient]->getIsConnect() == 1 && msg.command == "NICK")
+		else if (_clients[fdClient]->getRegistrationState() == RS_PassValidated && msg.command == "NICK")
 			CmNick(msg, fdClient);
-		else if (_clients[fdClient]->getIsConnect() == 2  && msg.command == "USER")
+		else if (_clients[fdClient]->getRegistrationState() == RS_NickValidated  && msg.command == "USER")
 			CmUser(msg, fdClient);
-		else
-			return ;
 
-		if (_clients[fdClient]->getIsConnect() == 3) {
-			if (_channel.find("#general") == _channel.end()) {
-				Channel *newChannel = new Channel("#general");
-				_channel.insert(std::pair<std::string, Channel*>("#general", newChannel));
-			}
-			t_msg join;
-			join.command = "JOIN";
-			join.params.push_back("#general");
-			CmJoin(join, fdClient);
-			answerClient(fdClient, RPL_WELCOME, "", "Welcome to the IRC network, " + _clients[fdClient]->getNickname() + "!");
+		if (_clients[fdClient]->getRegistrationState() == RS_Registered)
+		{
+			sendWelcomeMsg(fdClient);
+			joinGeneralChannel(fdClient);
 		}
+		return ;
 	}
 
 	std::map<std::string, FCmd>::iterator it = _fCommands.find(msg.command);
-	// TODO: Si el cliente no está validado no se debe ejecutar ningún comando
 	if (it != _fCommands.end()) 
 	{
 		std::cout << it->first << std::endl;
@@ -146,7 +160,6 @@ void Server::handleCommand(t_msg& msg, int fdClient)
 	} 
 	else
 		answerClient(fdClient, ERR_UNKNOWNCOMMAND, "", _clients[fdClient]->getNickname() + " Unknown command");
-
 }
 
 

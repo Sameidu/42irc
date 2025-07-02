@@ -33,24 +33,32 @@
 # define PINK    "\033[95;1m"
 # define CLEAR   "\033[0m"
 
-# define MAX_BYTES_MSG      512
-# define MAX_EVENTS         128
-# define MAX_CHAR_NICKNAME  9
-# define MAX_PASS_TRY       3
+# define MAX_BYTES_MSG  512
+# define MAX_EVENTS     128
+# define NICKLEN        9
+# define USERLEN        9
+# define REALNAMELEN    50
 
 # define	MAX_FDS	1024
 
 /* CONNECT SUCCESS */
 # define	RPL_WELCOME 			001
+# define    RPL_YOURHOST            002
+# define    RPL_CREATED             003
+# define    RPL_MYINFO              004
+# define    RPL_ISUPPORT            005
 
 /* PASS */
 # define 	ERR_PASSWDMISMATCH		464
-# define	ERR_ALREADYREGISTRED	-1 // TODO no se que codigo es 
 
 /* NICK */
 # define	ERR_NONICKNAMEGIVEN		431 // Si no se da parámetro
 # define	ERR_ERRONEUSNICKNAME	432 // Si el nick contiene caracteres inválidos
 # define	ERR_NICKNAMEINUSE		433 // Si ya hay otro cliente con ese nick
+
+/* USER */
+# define ERR_NEEDMOREPARAMS         461
+# define ERR_ALREADYREGISTERED      462
 
 /* JOIN */
 # define ERR_NEEDMOREPARAMS			461

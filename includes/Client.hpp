@@ -7,6 +7,13 @@
 
 class Channel;
 
+enum RegistrationStatus {
+    RS_NoPass = 0,        // Aún no ha enviado PASS
+    RS_PassValidated,     // PASS correcto recibido
+    RS_NickValidated,     // NICK recibido
+    RS_Registered         // USER recibido → registro completo
+};
+
 class Client
 {
 	private:
@@ -15,7 +22,7 @@ class Client
 		std::string 			_realName;
 		const int				_clientFd;
 		sockaddr_in	*			_clientAddr;
-		int						_isConnect;
+		RegistrationStatus		_registrationState;
 		std::string				_bufferMsgClient;
 		std::vector<Channel*>	_channels;
 
@@ -27,7 +34,7 @@ class Client
 		const std::string &getUsername() const;
 		const std::string &getNickname() const;
 		const std::string &getRealname() const;
-		const int &getIsConnect() const;
+		const RegistrationStatus &getRegistrationState() const;
 		int getFd() const;
 		std::string &getBufferMsgClient();
 		std::vector<Channel*>& getChannels();
@@ -36,7 +43,7 @@ class Client
 		void setUsername(const std::string &username);
 		void setNickname(const std::string &nickname);
 		void setRealname(const std::string &realname);
-		void setIsConnect(const int &isConnect);
+		void setRegistrationState(RegistrationStatus st);
 		void setBufferMsgClient(const std::string &msg);
 
     	void joinChannel(Channel* ch);

@@ -7,7 +7,8 @@ const int &Server::getPort() const { return _port; }
 const std::string &Server::getPassword() const { return _password; }
 
 Server::Server( const int &port, const std::string &password )
-	: _port(port), _password(password), _running(true), _socketFd(-1), _epollFd(-1), _maxChannelUsers(15) {}
+	: _port(port), _password(password), _running(true), _socketFd(-1), _epollFd(-1), _maxChannelUsers(15),
+	   _serverName ("ircserver.com"), _version("ChatServ-1.0"), _userModes("ix"), _chanModes("itoblk") {}
 
 Server::~Server() {
 	for (std::map<int, Client *>::iterator it = _clients.begin(); it != _clients.end(); ++it) {
@@ -92,6 +93,9 @@ void Server::init() {
 	/* 10. Create std::map for commands */
 	initCmds();
 
+	/* 11. Init other data*/
+	_creationDate = currentDateTimeString();
+
 	/* NOTE:  11. Print server info */
 	std::cout << "Server initialized with the following parameters:" << std::endl;
 	std::cout << "Port: " << _port << std::endl;
@@ -173,6 +177,7 @@ t_msg	Server::parseMsg(std::string fullMsg)
 	if (trailingPos != std::string::npos)
 	{
 		msg.trailing = args.substr(trailingPos + 1);
+		msg.hasTrailing = true;
 		args = args.substr(0, trailingPos); // quito el trailing si hay 
 	}
 	

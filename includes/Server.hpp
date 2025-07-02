@@ -17,6 +17,7 @@ typedef struct	s_msg
 	std::string					command;
 	std::vector<std::string>	params;
 	std::string 				trailing;
+	bool						hasTrailing;
 }  t_msg;
 
 
@@ -35,6 +36,11 @@ class Server
 		int									_epollFd;
 		std::map <std::string, FCmd>		_fCommands;
 		int 								_maxChannelUsers;
+		std::string 						_serverName; /* TODO: cambiar en todos los prefix a esta var en vez poner el nombre con "ircserv"*/
+		std::string							_version;
+		std::string							_creationDate;
+		std::string							_userModes; /* TODO: esto cuales son? */
+		std::string							_chanModes;
 		
 		void	connectNewClient();
 		void	disconnectClient(int fd);
@@ -47,6 +53,9 @@ class Server
 		void	initCmds();
 		void	sendMsgToClient(int fd, const std::string &cmd, const std::string &channel, const std::string &msg);
 		void	msgClientToClient(int from, int to, const std::string &cmd, const std::string &msg);
+		void	sendWelcomeMsg(int fdClient);
+		void	joinGeneralChannel(int fdClient);
+		void	sendISupport(int fdClient);
 
 
 		/* COMMANDS */
@@ -81,6 +90,7 @@ class Server
 
 bool	setNonBlocking(int fd);
 bool	isSpecial(char c);
+std::string currentDateTimeString();
 
 template<typename T>
 std::string to_string(const T &value) {

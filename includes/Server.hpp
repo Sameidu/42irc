@@ -36,11 +36,11 @@ class Server
 		int									_epollFd;
 		std::map <std::string, FCmd>		_fCommands;
 		int 								_maxChannelUsers;
-		std::string 						_servername = "ircserver.com"; /* TODO: cambiar en todos los prefix a esta var en vez poner el nombre con "ircserv"*/
-		std::string							_version = "ChatServ-1.0";
+		std::string 						_serverName; /* TODO: cambiar en todos los prefix a esta var en vez poner el nombre con "ircserv"*/
+		std::string							_version;
 		std::string							_creationDate;
-		std::string							_userModes = "ix"; /* TODO: esto cuales son? */
-		std::string							_chanModes = "ntlk"; /* TODO: esto cuales son? */
+		std::string							_userModes; /* TODO: esto cuales son? */
+		std::string							_chanModes;
 		
 		void	connectNewClient();
 		void	disconnectClient(int fd);
@@ -53,6 +53,7 @@ class Server
 		void	sendMsgToClient(int fd, const std::string &cmd, const std::string &channel, const std::string &msg);
 		void	sendWelcomeMsg(int fdClient);
 		void	joinGeneralChannel(int fdClient);
+		void	sendISupport(int fdClient);
 
 
 		/* COMMANDS */

@@ -94,18 +94,18 @@ void Channel::disconnectUser(Client *client) {
 				_admins.insert(std::make_pair(_ownerFd, _users[_ownerFd]));
 			}
 			else
-				_ownerFd = -1;
+			_ownerFd = -1;
 		}
 		else
-			_admins.erase(client->getFd());
+		_admins.erase(client->getFd());
 	}
 	if (_ownerFd == -1 && !_users.empty()) {
 		// Si no hay propietario ni admins pero hay usuarios, se asigna el primero como propietario
 		_ownerFd = _users.begin()->first;
 		_admins.insert(std::make_pair(_ownerFd, _users[_ownerFd]));
 	}
-	_users.erase(client->getFd());
 	client->leaveChannel(this);
+	_users.erase(client->getFd());
 }
 
 void Channel::broadcastMessageNochan(int fd, const std::string &cmd, const std::string &msg) const {

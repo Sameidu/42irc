@@ -74,31 +74,29 @@ void Server::sendMsgToClient(int fd, const std::string &cmd, const std::string &
 
 void	Server::sendWelcomeMsg(int fdClient)
 {
-	/*Client& c = *_clients[fd];
-    // 001
-    answerClient(fd, RPL_WELCOME, c.getNickname(),
-                 "Welcome to the IRC network, " + c.getNickname());
-    // 002
-    answerClient(fd, RPL_YOURHOST, c.getNickname(),
-                 "Your host is " + _servername + ", running version " + _version);
-    // 003
-    answerClient(fd, RPL_CREATED, c.getNickname(),
-                 "This server was created " + _creationDate);
-    // 004
-    answerClient(fd, RPL_MYINFO, c.getNickname(),
-                 _servername + " " + _version + " " + _userModes + " " + _chanModes);
-    // 005 
-    sendISupport(fd);*/
-	answerClient(fdClient, RPL_WELCOME, "", "Welcome to the IRC network, " + _clients[fdClient]->getNickname());
+	Client& c = *_clients[fdClient];
+
+	answerClient(fdClient, RPL_WELCOME, "", "Welcome to the IRC network, " + c.getNickname());
+	
+    answerClient(fdClient, RPL_YOURHOST, "", "Your host is " + _serverName + ", running version " + _version);
+
+    answerClient(fdClient, RPL_CREATED, "", "This server was created " + _creationDate);
+
+    answerClient(fdClient, RPL_MYINFO, "", _serverName + " " + _version + " " + _userModes + " " + _chanModes);
+
+    // TODO: sendISupport(fdClient); no es obligatorio y no me apetece hacerlo
 }
 
 void	Server::joinGeneralChannel(int fdClient)
 {
 	if (_channel.find("#general") == _channel.end()) {
-		Channel *newChannel = new Channel("#general");
-		_channel.insert(std::pair<std::string, Channel*>("#general", newChannel));
-	}
-	_channel["#general"]->newChannelUser(_clients[fdClient]);
+        Channel *newChannel = new Channel("#general");
+        _channel.insert(std::pair<std::string, Channel*>("#general", newChannel));
+    }
+    t_msg join;
+    join.command = "JOIN";
+    join.params.push_back("#general");
+    CmJoin(join, fdClient);
 }
 
 void Server::handleCommand(t_msg& msg, int fdClient)

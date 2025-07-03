@@ -72,7 +72,7 @@ void Server::CmMode(t_msg &msg, int fd) {
 
 	std::string modes;
 	std::vector<std::string> params;
-	int modeCount = 0;
+	std::size_t modeCount = 0;
 	for (size_t i = 1; i < msg.params.size(); ++i) {
 		if ((msg.params[i][0] == '+' || msg.params[i][0] == '-') && msg.params[i].size() > 1) {
 			std::string sign;

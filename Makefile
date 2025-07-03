@@ -36,7 +36,8 @@ SRC     :=	main.cpp \
 			CmPart.cpp \
 			CmPass.cpp \
 			CmTopic.cpp \
-			CmUser.cpp
+			CmUser.cpp \
+			CmPrivmsg.cpp
 
 
 OBJ     := $(SRC:%.cpp=$(OBJ_DIR)/%.o)

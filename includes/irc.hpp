@@ -91,6 +91,16 @@
 # define RPL_TOPIC					332
 # define RPL_TOPICWHOTIME			333
 
+/* INVITE */
+# define ERR_NOSUCHNICK				401
+# define ERR_USERONCHANNEL			443 
+# define RPL_INVITING				341
+
+/* MODE */
+# define RPL_CHANNELMODEIS			324
+# define ERR_USERSDONTMATCH			502
+# define ERR_UNKNOWNMODE			472
+
 /* PRIVMSG */
 # define ERR_NOSUCHNICK             401
 # define ERR_NOSUCHSERVER           402

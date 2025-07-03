@@ -286,7 +286,7 @@ void  Server::manageServerInput() {
 	std::string input;
 	std::getline(std::cin, input);
 	if (input.empty())
-		return;
+		return ;
 	if (input == "exit" || input == "quit") {
 		_running = false;
 		std::cout << PINK << "Server is shutting down..." << CLEAR << std::endl;

@@ -24,6 +24,14 @@ int Channel::getUserFd(const std::string &nick) const {
 	return -1; // Si no se encuentra el usuario, se devuelve -1
 }
 
+std::string Channel::getMode() const {
+	std::string modes = "+";
+	for (std::set<char>::const_iterator it = _mode.begin(); it != _mode.end(); ++it) {
+		modes += *it;
+	}
+	return modes;
+}
+
 // SETTERS
 
 void Channel::setName(const std::string &name) { _name = name; }
@@ -106,6 +114,18 @@ void Channel::disconnectUser(Client *client) {
 	}
 	client->leaveChannel(this);
 	_users.erase(client->getFd());
+}
+
+void Channel::addInvitedList(Client *client) {
+	if (_invited.find(client->getFd()) != _invited.end())
+		throw std::runtime_error("User already invited to this channel.");
+	_invited.insert(std::make_pair(client->getFd(), client));
+}
+
+void Channel::removeInvitedList(Client *client) {
+	if (_invited.find(client->getFd()) == _invited.end())
+		throw std::runtime_error("User not invited to this channel.");
+	_invited.erase(client->getFd());
 }
 
 void Channel::broadcastMessageNochan(int fd, const std::string &cmd, const std::string &msg) const {

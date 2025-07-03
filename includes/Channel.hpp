@@ -37,6 +37,7 @@ class Channel
 		const std::string &getTopic() const;
 		size_t getUserCount() const;
 		int getUserFd(const std::string &nick) const;
+		std::string getMode() const;
 
 		void setName(const std::string &name);
 		void setMaxUsers(const size_t &maxUsers);
@@ -53,6 +54,8 @@ class Channel
 		bool isAdmin(int fd) const;
 
 		std::string listUsers();
+		void addInvitedList(Client *client);
+		void removeInvitedList(Client *client);
 		void newChannelUser(Client *client);
 		void disconnectUser(Client *client);
 		void broadcastMessage(int fd, const std::string &cmd, const std::string &user, const std::string &msg) const;

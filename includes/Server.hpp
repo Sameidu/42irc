@@ -72,6 +72,8 @@ class Server
 		void CmKick(t_msg &msg, int fd);
 		void CmTopic(t_msg &msg, int fd);
 		void CmMode(t_msg &msg, int fd);
+		void manageAddMode(char mode, const std::string &channel, std::vector<std::string> &params, int fd);
+		void manageRemoveMode(char mode, const std::string &channel, std::vector<std::string> &params, int fd);
 		void CmNames(t_msg &msg, int fd);
 
 	public:

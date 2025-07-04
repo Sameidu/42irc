@@ -44,24 +44,6 @@ void Server::answerClient(int fdClient, int code, const std::string &target, con
 		throw std::runtime_error("Error: sending msg to client");
 }
 
-void Server::answerClient(int fdClient, int code, char &target, const std::string &msg)
-{
-	std::ostringstream ss;
-	ss << std::setfill('0') << std::setw(3) << code;  // código en 3 dígitos
-	std::string codeStr = ss.str();
-
-	std::string nickname = _clients[fdClient]->getNickname();
-	if (nickname.empty())
-		nickname = "unknown";
-	std::string response = ":localhost " + codeStr + " " + nickname;
-
-	if (target)
-		response += " " + target;
-	response += " :" + msg + "\r\n";
-
-	if (send(fdClient, response.c_str(), response.size(), MSG_EOR) < 0)
-		throw std::runtime_error("Error: sending msg to client");
-}
 
 /**
  * @brief Envía un mensaje IRC directo a un cliente, sin código numérico.
@@ -138,6 +120,11 @@ void Server::handleCommand(t_msg& msg, int fdClient)
 		}
 		if (_clients[fdClient]->getRegistrationState() == RS_NoPass && msg.command == "PASS")
 			CmPass(msg, fdClient);
+		else if (_clients[fdClient]->getRegistrationState() == RS_PassValidated && msg.command == "PASS")
+		{
+			_clients[fdClient]->setRegistrationState(RS_NoPass);
+			CmPass(msg, fdClient);
+		}
 		else if (_clients[fdClient]->getRegistrationState() == RS_PassValidated && msg.command == "NICK")
 			CmNick(msg, fdClient);
 		else if (_clients[fdClient]->getRegistrationState() == RS_NickValidated  && msg.command == "USER")

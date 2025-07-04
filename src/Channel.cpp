@@ -128,6 +128,31 @@ void Channel::removeInvitedList(Client *client) {
 	_invited.erase(client->getFd());
 }
 
+void Channel::addBannedList(Client *client) {
+	if (_banned.find(client->getFd()) != _banned.end())
+		throw std::runtime_error("User already banned from this channel.");
+	_banned.insert(std::make_pair(client->getFd(), client));
+}
+
+void Channel::removeBannedList(Client *client) {
+	if (_banned.find(client->getFd()) == _banned.end())
+		throw std::runtime_error("User not banned from this channel.");
+	_banned.erase(client->getFd());
+}
+
+void Channel::addAdminList(Client *client) {
+	if (_admins.find(client->getFd()) != _admins.end())
+		throw std::runtime_error("User already admin of this channel.");
+	_admins.insert(std::make_pair(client->getFd(), client));
+}
+
+void Channel::removeAdminList(Client *client) {
+	if (_admins.find(client->getFd()) == _admins.end())
+		throw std::runtime_error("User not admin of this channel.");
+	_admins.erase(client->getFd());
+	_invited.erase(client->getFd());
+}
+
 void Channel::broadcastMessageNochan(int fd, const std::string &cmd, const std::string &msg) const {
 	std::string prefix = ":" + _users.at(fd)->getNickname() + "!" + _users.at(fd)->getUsername() + "@localhost";
 	std::string message = prefix + " " + cmd;
@@ -167,6 +192,18 @@ std::string Channel::listUsers() {
 			list += " ";
 		if (isAdmin(it->first))
 			list += "@";
+		list += it->second->getNickname();
+	}
+	return list;
+}
+
+std::string Channel::listBanned() {
+	std::string list;
+	if (_banned.empty())
+		return list;
+	for (std::map<int, Client *>::iterator it = _banned.begin(); it != _banned.end(); ++it) {
+		if (!list.empty())
+			list += " ";
 		list += it->second->getNickname();
 	}
 	return list;

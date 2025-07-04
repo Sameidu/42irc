@@ -100,6 +100,8 @@
 # define RPL_CHANNELMODEIS			324
 # define ERR_USERSDONTMATCH			502
 # define ERR_UNKNOWNMODE			472
+# define RPL_BANLIST				367
+# define RPL_ENDOFBANLIST			368
 
 /* COMMANDOS */
 # define 	ERR_UNKNOWNCOMMAND		421 // comando desconocido

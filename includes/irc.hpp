@@ -38,6 +38,7 @@
 # define NICKLEN        9
 # define USERLEN        9
 # define REALNAMELEN    50
+# define MAX_TARGETS    10
 
 # define	MAX_FDS	1024
 

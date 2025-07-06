@@ -76,6 +76,7 @@ class Server
 		void manageRemoveMode(char mode, const std::string &channel, std::vector<std::string> &params, int fd);
 		void CmNames(t_msg &msg, int fd);
 
+
 	public:
 
 		Server(const int &port, const std::string &password);

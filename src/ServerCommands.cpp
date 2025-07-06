@@ -19,7 +19,7 @@ void	Server::initCmds()
 	_fCommands.insert(std::pair<std::string, FCmd>("KICK", &Server::CmKick)); // Solo para admins
 	_fCommands.insert(std::pair<std::string, FCmd>("INVITE", &Server::CmInvite)); // Solo para admins
 	_fCommands.insert(std::pair<std::string, FCmd>("MODE", &Server::CmMode)); // Solo para admins
-	//_fCommands.insert(std::pair<std::string, FCmd>("PRIVMSG", &Server::CmPrivMsg));
+	_fCommands.insert(std::pair<std::string, FCmd>("PRIVMSG", &Server::CmPrivMsg));
 	//_fCommands.insert(std::pair<std::string, FCmd>("QUIT", &Server::CmQuit));
 
 }

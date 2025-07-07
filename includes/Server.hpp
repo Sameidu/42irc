@@ -56,6 +56,7 @@ class Server
 		void	sendWelcomeMsg(int fdClient);
 		void	joinGeneralChannel(int fdClient);
 		void	sendISupport(int fdClient);
+		std::string makePrefix(int fd);
 
 
 		/* COMMANDS */

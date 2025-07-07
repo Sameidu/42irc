@@ -27,12 +27,23 @@ void Server::CmPrivMsg(t_msg &msg, int fdClient)
             std::map<std::string, Channel*>::iterator chit = _channel.find(target);
 
             if (chit == _channel.end())
+            {
                 answerClient(fdClient, ERR_NOSUCHCHANNEL, target, "No such channel");
+                continue ;
+            }
             else
             {
                 Channel* ch = chit->second;
-                if (ch->isBanned(fdClient))
+                if (ch->getUserFd(_clients[fdClient]->getNickname()) != -1)
+                {
+                    answerClient(fdClient, ERR_NOTONCHANNEL, target, "Cannot send to channel");
+                    continue ;
+                }
+                else if ( ch->isBanned(fdClient))
+                {
                     answerClient(fdClient, ERR_CANNOTSENDTOCHAN, target, "Cannot send to channel");
+                    continue ;
+                }
                 else
                     ch->broadcastMessage(fdClient, "PRIVMSG", _clients[fdClient]->getUsername(), msg.trailing);
             }
@@ -48,7 +59,12 @@ void Server::CmPrivMsg(t_msg &msg, int fdClient)
                     break;
                 }
             }
-            if (foundFd != -1)
+            if (foundFd == -1)
+            {
+                answerClient(fdClient, ERR_NOSUCHNICK, target, "No such nick");
+                continue ;
+            }
+            else
             {
                 msgClientToClient(fdClient, foundFd, "PRIVMSG", msg.trailing);
                 continue;

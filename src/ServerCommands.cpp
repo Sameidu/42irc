@@ -24,6 +24,12 @@ void	Server::initCmds()
 
 }
 
+std::string Server::makePrefix(int fd) {
+  return ":" + _clients[fd]->getNickname()
+       + "!" + _clients[fd]->getUsername()
+       + "@localhost";
+}
+
 void Server::answerClient(int fdClient, int code, const std::string &target, const std::string &msg)
 {
 	std::ostringstream ss;
@@ -62,7 +68,7 @@ void Server::answerClient(int fdClient, int code, const std::string &target, con
  */
 
 void Server::sendMsgToClient(int fd, const std::string &cmd, const std::string &channel, const std::string &msg) {
-	std::string prefix = ":" + _clients[fd]->getNickname() + "!" + _clients[fd]->getUsername() + "@localhost";
+	std::string prefix = makePrefix(fd);
 	std::string response = prefix + " " + cmd + " " + channel;
 	
 	if (!msg.empty())
@@ -73,7 +79,7 @@ void Server::sendMsgToClient(int fd, const std::string &cmd, const std::string &
 }
 
 void Server::msgClientToClient(int from, int to, const std::string &cmd, const std::string &msg) {
-	std::string prefix = ":" + _clients[from]->getNickname() + "!" + _clients[from]->getUsername() + "@localhost";
+	std::string prefix = makePrefix(from);
 	std::string response = prefix + " " + cmd + " " + _clients[to]->getNickname();
 	
 	if (!msg.empty())

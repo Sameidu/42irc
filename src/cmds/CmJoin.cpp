@@ -81,6 +81,8 @@ void Server::CmJoin(t_msg &msg, int fd) {
 					answerClient(fd, ERR_INVITEONLYCHAN, channels[i], "Cannot join channel (+i)");
 					continue ;
 				}
+				else
+					_channel[channels[i]]->removeInvitedList(_clients[fd]);
 			}
 			// Comprobar si el canal tiene lista de banneados y el usuario se encuentra en ella
 			if (_channel[channels[i]]->hasMode('b')) {

@@ -83,7 +83,7 @@
 
 /* LIST */
 # define	RPL_LISTSTART			321
-# define	RPL_LISTITEM			322
+# define	RPL_LIST				322
 # define	RPL_LISTEND				323
 
 /* TOPIC */
@@ -103,6 +103,7 @@
 # define ERR_UNKNOWNMODE			472
 # define RPL_BANLIST				367
 # define RPL_ENDOFBANLIST			368
+# define RPL_UMODEIS				221
 
 /* PRIVMSG */
 # define ERR_NOSUCHNICK             401

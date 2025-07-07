@@ -44,7 +44,7 @@ void Server::CmMode(t_msg &msg, int fd) {
 				return ;
 			}
 			// std::string modes = _clients[user]->getModes();
-			answerClient(fd, RPL_CHANNELMODEIS, _clients[fd]->getNickname(), "modes");
+			answerClient(fd, RPL_UMODEIS, _clients[fd]->getNickname(), "modes");
 			return ;
 		}
 	}
@@ -54,7 +54,6 @@ void Server::CmMode(t_msg &msg, int fd) {
 			answerClient(fd, ERR_NOSUCHCHANNEL, msg.params[0], "No such channel");
 			return ;
 		}
-		//TODO: Añadir respuesta de modos de canal
 	}
 	else {
 		if (_clients[fd]->getNickname() != msg.params[0]) {
@@ -160,10 +159,18 @@ void Server::manageAddMode(char mode, const std::string &channel, std::vector<st
 		return ;
 	}
 	
-	if (mode == 'i')
+	if (mode == 'i') {
 		_channel[channel]->setMode('i');
-	if (mode == 't') 
+		_channel[channel]->broadcastMessage(fd, "MODE", "", "+i");
+		sendMsgToClient(fd, "MODE", channel, "+i");
+		return ;
+	}
+	if (mode == 't') {
 		_channel[channel]->setMode('t');
+		_channel[channel]->broadcastMessage(fd, "MODE", "", "+t");
+		sendMsgToClient(fd, "MODE", channel, "+t");
+		return ;
+	}
 	if (mode == 'b') {
 		if (params.empty()) {
 			answerClient(fd, RPL_BANLIST, channel, _channel[channel]->listBanned());
@@ -182,10 +189,10 @@ void Server::manageAddMode(char mode, const std::string &channel, std::vector<st
 		Client *client = _clients[userFd];
 		_channel[channel]->addBannedList(client);
 		_channel[channel]->broadcastMessage(fd, "MODE", client->getNickname(), "+b " + client->getNickname());
+		sendMsgToClient(fd, "MODE", channel, "+b " + client->getNickname());
 		params.erase(params.begin());
-	}
-	if (mode == 'i' || mode == 't' || mode == 'b') 
 		return ;
+	}
 
 	if (params.size() < 1) {
 		answerClient(fd, ERR_NEEDMOREPARAMS, "MODE", "Not enough parameters for mode +" + std::string(1, mode));
@@ -198,6 +205,8 @@ void Server::manageAddMode(char mode, const std::string &channel, std::vector<st
 	if (mode == 'k') {
 		_channel[channel]->setPass(params[0]);
 		_channel[channel]->setMode('k');
+		_channel[channel]->broadcastMessage(fd, "MODE", "", "+k " + params[0]);
+		sendMsgToClient(fd, "MODE", channel, "+k " + params[0]);
 		params.erase(params.begin());
 	}
 	if (mode == 'l') {
@@ -212,6 +221,8 @@ void Server::manageAddMode(char mode, const std::string &channel, std::vector<st
 		}
 		_channel[channel]->setMaxUsers(numberUsers);
 		_channel[channel]->setMode('l');
+		_channel[channel]->broadcastMessage(fd, "MODE", "", "+l " + to_string(numberUsers));
+		sendMsgToClient(fd, "MODE", channel, "+l " + to_string(numberUsers));
 		params.erase(params.begin());
 	}
 	if (mode == 'o') {
@@ -227,6 +238,7 @@ void Server::manageAddMode(char mode, const std::string &channel, std::vector<st
 		Client *client = _clients[userFd];
 		_channel[channel]->addAdminList(client);
 		_channel[channel]->broadcastMessage(fd, "MODE", client->getNickname(), "+o " + client->getNickname());
+		sendMsgToClient(fd, "MODE", channel, "+o " + client->getNickname());
 		params.erase(params.begin());
 	}
 }
@@ -249,8 +261,11 @@ void Server::manageRemoveMode(char mode, const std::string &channel, std::vector
 		_channel[channel]->unsetMode('l');
 	}
 
-	if (mode == 'i' || mode == 't' || mode == 'k' || mode == 'l')
+	if (mode == 'i' || mode == 't' || mode == 'k' || mode == 'l') {
+		_channel[channel]->broadcastMessage(fd, "MODE", "", "-" + std::string(1, mode));
+		sendMsgToClient(fd, "MODE", channel, "-" + std::string(1, mode));
 		return ;
+	}
 
 	if (params.size() < 1) {
 		answerClient(fd, ERR_NEEDMOREPARAMS, "MODE", "Not enough parameters for mode -" + std::string(1, mode));
@@ -273,6 +288,7 @@ void Server::manageRemoveMode(char mode, const std::string &channel, std::vector
 		}
 		_channel[channel]->removeAdminList(_clients[userFd]);
 		_channel[channel]->broadcastMessage(fd, "MODE", _clients[userFd]->getNickname(), "-o " + _clients[userFd]->getNickname());
+		sendMsgToClient(fd, "MODE", channel, "-o " + _clients[userFd]->getNickname());
 		params.erase(params.begin());
 	}
 	if (mode == 'b') {
@@ -287,6 +303,7 @@ void Server::manageRemoveMode(char mode, const std::string &channel, std::vector
 		}
 		_channel[channel]->removeBannedList(_clients[userFd]);
 		_channel[channel]->broadcastMessage(fd, "MODE", _clients[userFd]->getNickname(), "-b " + _clients[userFd]->getNickname());
+		sendMsgToClient(fd, "MODE", channel, "-b " + _clients[userFd]->getNickname());
 		params.erase(params.begin());
 	}
 }

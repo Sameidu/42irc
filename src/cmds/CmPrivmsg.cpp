@@ -34,7 +34,7 @@ void Server::CmPrivMsg(t_msg &msg, int fdClient)
             else
             {
                 Channel* ch = chit->second;
-                if (ch->getUserFd(_clients[fdClient]->getNickname()) != -1)
+                if (ch->getUserFd(_clients[fdClient]->getNickname()) == -1)
                 {
                     answerClient(fdClient, ERR_NOTONCHANNEL, target, "Cannot send to channel");
                     continue ;
@@ -44,8 +44,8 @@ void Server::CmPrivMsg(t_msg &msg, int fdClient)
                     answerClient(fdClient, ERR_CANNOTSENDTOCHAN, target, "Cannot send to channel");
                     continue ;
                 }
-                else
-                    ch->broadcastMessage(fdClient, "PRIVMSG", _clients[fdClient]->getUsername(), msg.trailing);
+                else 
+                    ch->broadcastMessage(fdClient, "PRIVMSG", "", msg.trailing);
             }
         }
         else

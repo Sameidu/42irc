@@ -269,10 +269,13 @@ void Server::disconnectClient(int fd) {
 	if (_clients.find(fd) == _clients.end()) 
 		throw std::runtime_error("Error: trying to disconnect a client that does not exist");
 	
-	std::cout << "Disconnecting client with fd: " << fd << std::endl;
 	Client *client = _clients[fd];
-	for (std::map<std::string, Channel *>::iterator it = _channel.begin(); it != _channel.end(); ++it)
-		_channel[it->first]->disconnectUser(client);	
+	// TODO: Creo que hay que cambiar esto por el comando QUIT
+	for (std::map<std::string, Channel *>::iterator it = _channel.begin(); it != _channel.end(); ++it) {
+		if (_channel[it->first]->hasUser(client->getFd()))
+			_channel[it->first]->broadcastMessage(fd, "QUIT", _clients[fd]->getNickname(), "Disconnecting client");
+		_channel[it->first]->disconnectUser(client);
+	}
 	if (epoll_ctl(_epollFd, EPOLL_CTL_DEL, fd, NULL) < 0)
 		throw std::runtime_error("Error: when removing client from epoll instance");
 	if (close(fd) < 0) 

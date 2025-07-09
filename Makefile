@@ -83,13 +83,21 @@ fclean: clean
 re: fclean all
 
 # ============================
+# 🤖 BONUS RULES
+# ============================
+
+bonus:
+	@make -C bot
+	@echo "$(BLUE)🤖 Bonus bot compiled!$(CLEAR)"
+
+# ============================
 # 🚀 QUICK TEST RULE
 # ============================
 PORT     ?= 6667
 PASS     ?= password
 
-test: re
+test: re bonus
 	@echo "$(BLUE)🚀 Running server on port $(PORT) with password '$(PASS)'...$(CLEAR)"
 	@./$(NAME) $(PORT) $(PASS)
 
-.PHONY: all clean fclean re test
+.PHONY: all clean fclean re test bonus

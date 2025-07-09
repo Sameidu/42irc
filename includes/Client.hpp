@@ -27,7 +27,7 @@ class Client
 		std::vector<Channel*>	_channels;
 
 	public:
-		Client(const int fd, sockaddr_in	*clientAddr);
+		Client(const int fd, sockaddr_in *clientAddr);
 		~Client();
 
 		// Getters

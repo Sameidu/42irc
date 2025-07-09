@@ -93,25 +93,33 @@ void Channel::disconnectUser(Client *client) {
 	if (_users.find(client->getFd()) == _users.end())
 		return ;
 
-	if (_admins.find(client->getFd()) != _admins.end()) {
+	if (_users.find(client->getFd()) != _users.end()) {
 		if (_ownerFd == client->getFd()) {
 			// Si el propietario se desconecta, se asigna un nuevo propietario a un admin
 			if (_admins.size() > 1) {
+				removeAdminList(client);
 				_ownerFd = _admins.begin()->first;
-				_admins.erase(_admins.begin());
-				_admins.insert(std::make_pair(_ownerFd, _users[_ownerFd]));
 			}
 			else
 			_ownerFd = -1;
 		}
-		else
-		_admins.erase(client->getFd());
 	}
 	if (_ownerFd == -1 && !_users.empty()) {
-		// Si no hay propietario ni admins pero hay usuarios, se asigna el primero como propietario
-		_ownerFd = _users.begin()->first;
+		for (std::map<int, Client *>::iterator it = _users.begin(); it != _users.end(); ++it) {
+			if (it->second->getFd() != client->getFd()) {
+				_ownerFd = it->first;
+				break;
+			}
+		}
 		_admins.insert(std::make_pair(_ownerFd, _users[_ownerFd]));
+		std::string reponse = ":" + _users[_ownerFd]->getNickname() + "!" + _users[_ownerFd]->getUsername() + "@localhost";
+		reponse += " MODE " + _name + " +o " + _users[_ownerFd]->getNickname() + "\r\n";
+		if (send(_ownerFd, reponse.c_str(), reponse.size(), MSG_EOR) < 0)
+			throw std::runtime_error("Error: sending msg to client");
+		broadcastMessage(client->getFd(), "MODE", _users[_ownerFd]->getNickname(), "+o " + _users[_ownerFd]->getNickname());
 	}
+	if (isAdmin(client->getFd()))
+		removeAdminList(client);
 	client->leaveChannel(this);
 	_users.erase(client->getFd());
 }

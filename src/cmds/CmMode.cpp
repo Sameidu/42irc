@@ -239,29 +239,29 @@ void Server::manageAddMode(char mode, const std::string &channel, std::vector<st
 		_channel[channel]->addAdminList(client);
 		_channel[channel]->broadcastMessage(fd, "MODE", client->getNickname(), "+o " + client->getNickname());
 		sendMsgToClient(fd, "MODE", channel, "+o " + client->getNickname());
+		msgClientToClient(fd, userFd, "MODE " + channel + " +o " + client->getNickname(), "");
 		params.erase(params.begin());
 	}
 }
 
 void Server::manageRemoveMode(char mode, const std::string &channel, std::vector<std::string> &params, int fd) {
-	if (!_channel[channel]->hasMode(mode)) {
-		answerClient(fd, ERR_NEEDMOREPARAMS, "MODE", "Channel doesn't have mode -" + std::string(1, mode));
-		return ;
-	}
-	if (mode == 'i')
-		_channel[channel]->unsetMode('i');
-	if (mode == 't')
-		_channel[channel]->unsetMode('t');
-	if (mode == 'k') {
-		_channel[channel]->setPass("");
-		_channel[channel]->unsetMode('k');
-	}
-	if (mode == 'l') {
-		_channel[channel]->setMaxUsers(0);
-		_channel[channel]->unsetMode('l');
-	}
-
 	if (mode == 'i' || mode == 't' || mode == 'k' || mode == 'l') {
+		if (!_channel[channel]->hasMode(mode)) {
+			answerClient(fd, ERR_NEEDMOREPARAMS, "MODE", "Channel doesn't have mode -" + std::string(1, mode));
+			return ;
+		}
+		if (mode == 'i')
+			_channel[channel]->unsetMode('i');
+		if (mode == 't')
+			_channel[channel]->unsetMode('t');
+		if (mode == 'k') {
+			_channel[channel]->setPass("");
+			_channel[channel]->unsetMode('k');
+		}
+		if (mode == 'l') {
+			_channel[channel]->setMaxUsers(0);
+			_channel[channel]->unsetMode('l');
+		}
 		_channel[channel]->broadcastMessage(fd, "MODE", "", "-" + std::string(1, mode));
 		sendMsgToClient(fd, "MODE", channel, "-" + std::string(1, mode));
 		return ;
@@ -289,6 +289,7 @@ void Server::manageRemoveMode(char mode, const std::string &channel, std::vector
 		_channel[channel]->removeAdminList(_clients[userFd]);
 		_channel[channel]->broadcastMessage(fd, "MODE", _clients[userFd]->getNickname(), "-o " + _clients[userFd]->getNickname());
 		sendMsgToClient(fd, "MODE", channel, "-o " + _clients[userFd]->getNickname());
+		msgClientToClient(fd, userFd, "MODE " + channel + " -o " + _clients[userFd]->getNickname(), "");
 		params.erase(params.begin());
 	}
 	if (mode == 'b') {

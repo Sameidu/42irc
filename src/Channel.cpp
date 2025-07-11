@@ -95,7 +95,6 @@ void Channel::disconnectUser(Client *client) {
 
 	if (_users.find(client->getFd()) != _users.end()) {
 		if (_ownerFd == client->getFd()) {
-			// Si el propietario se desconecta, se asigna un nuevo propietario a un admin
 			if (_admins.size() > 1) {
 				removeAdminList(client);
 				_ownerFd = _admins.begin()->first;
@@ -104,7 +103,7 @@ void Channel::disconnectUser(Client *client) {
 			_ownerFd = -1;
 		}
 	}
-	if (_ownerFd == -1 && !_users.empty()) {
+	if (_ownerFd == -1 && _users.size() > 1) {
 		for (std::map<int, Client *>::iterator it = _users.begin(); it != _users.end(); ++it) {
 			if (it->second->getFd() != client->getFd()) {
 				_ownerFd = it->first;

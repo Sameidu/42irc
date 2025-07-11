@@ -40,5 +40,9 @@ void Server::CmKick(t_msg &msg, int fd) {
 		sendMsgToClient(fd, "KICK", msg.params[0] + " " + *it , reason);
 		_channel[msg.params[0]]->broadcastMessage(fd, "KICK", *it, reason);
 		_channel[msg.params[0]]->disconnectUser(_clients[userFd]);
+		if (_channel[msg.params[0]]->getUserCount() == 0) {
+			delete _channel[msg.params[0]];
+			_channel.erase(msg.params[0]);
+		}
 	}
 }

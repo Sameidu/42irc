@@ -16,7 +16,7 @@ const std::string &Client::getRealname() const { return _realName; }
 
 const RegistrationStatus &Client::getRegistrationState() const { return _registrationState;}
 
-std::string &Client::getBufferMsgClient() {return _bufferMsgClient; }
+std::string &Client::getBufferMsgClient() { return _bufferMsgClient; }
 
 std::vector<Channel*>& Client::getChannels() { return _channels; }
 

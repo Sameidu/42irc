@@ -1,6 +1,7 @@
 #include <Server.hpp>
 
 /* TODO: Como gestionamos errores con try catch¿?¿ de momento estoy mandando cuando falla con throw*/
+// Puertos del estandar: 6665-6669 
 
 const int &Server::getPort() const { return _port; }
 

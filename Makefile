@@ -78,6 +78,7 @@ clean:
 fclean: clean
 	@echo "$(YELLOW)🧽 Removing executable...$(CLEAR)"
 	@rm -rf $(NAME)
+	@make fclean -C bot
 	@echo "$(GREEN)✔ Executable removed.$(CLEAR)"
 
 re: fclean all
@@ -86,7 +87,7 @@ re: fclean all
 # 🤖 BONUS RULES
 # ============================
 
-bonus:
+bonus: all
 	@make -C bot
 	@echo "$(BLUE)🤖 Bonus bot compiled!$(CLEAR)"
 

@@ -1,0 +1,57 @@
+#include <Bot.hpp>
+
+// NAMES <channel>{,<channel>}
+void Bot::CmNames(t_msg &msg, int fd) {
+	(void)msg;
+    (void)fd;
+	// /* 1.- Comprobar que los parametros sean como mucho 1
+	//  * 2.- Si no se especifica canal, enviar la lista de todos los canales y sus usuarios
+	//  * 3.- Si se especifica canal, comprobar que exista y enviar la lista de usuarios del canal
+	//  */
+	// if (msg.params.size() > 1) {
+	// 	answerClient(fd, ERR_NEEDMOREPARAMS, "NAMES", "Not enough parameters");
+	// 	return ;
+	// }
+	// if (msg.params.empty()) {
+	// 	// Enviar la lista de todos los canales y sus usuarios
+	// 	for (std::map<std::string, Channel *>::iterator it = _channel.begin(); it != _channel.end(); ++it) {
+	// 		std::string target;
+	// 		if (it->second->hasMode('s') || it->second->hasMode('p')) {
+	// 			if (!it->second->hasUser(fd))
+	// 				continue ;
+	// 			if (it->second->hasMode('s'))
+	// 				target = "@ " + it->first;
+	// 			else
+	// 				target = "* " + it->first;
+	// 		}
+	// 		else 
+	// 			target = "= " + it->first;
+	// 		std::string response = it->second->listUsers();
+	// 		answerClient(fd, RPL_NAMREPLY, target, response);
+	// 		answerClient(fd, RPL_ENDOFNAMES, target, "End of /NAMES list");
+	// 	}
+	// }
+	// else {
+	// 	std::vector<std::string> channels;
+	// 	splitCmd(msg.params[0], channels, ',');
+
+	// 	for (std::vector<std::string>::iterator it = channels.begin(); it != channels.end(); ++it) {
+	// 		std::string target;
+	// 		if (_channel.find(*it) == _channel.end())
+	// 			continue ;
+	// 		if (_channel[*it]->hasMode('s') || _channel[*it]->hasMode('p')) {
+	// 			if (!_channel[*it]->hasUser(fd))
+	// 				continue ;
+	// 			if (_channel[*it]->hasMode('s'))
+	// 				target = "@ " + *it;
+	// 			else
+	// 				target = "* " + *it;
+	// 		}
+	// 		else
+	// 			target = "= " + *it;
+	// 		std::string response = _channel[*it]->listUsers();
+	// 		answerClient(fd, RPL_NAMREPLY, target, response);
+	// 		answerClient(fd, RPL_ENDOFNAMES, *it, "End of /NAMES list");
+	// 	}
+	// }
+}

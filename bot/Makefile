@@ -18,17 +18,26 @@ CC      := c++
 CFLAGS  := -Wall -Wextra -Werror -std=c++98 -I$(DIR_INCLUDES)
 DEBUG	:= -g3 -fsanitize=address,leak,undefined
 
-vpath 	%.cpp src
+vpath 	%.cpp src src/cmds
 
 SRC     :=	main.cpp \
-			Bot.cpp 
+			Bot.cpp \
+			CmCAP.cpp \
+			CmInvite.cpp \
+			CmJoin.cpp \
+			CmKick.cpp \
+			CmList.cpp \
+			CmMode.cpp \
+			CmNames.cpp \
+			CmNick.cpp \
+			CmPart.cpp \
+			CmPass.cpp \
+			CmPrivmsg.cpp \
+			CmTopic.cpp \
+			CmUser.cpp \
+
 
 OBJ = $(patsubst %.cpp, $(OBJ_DIR)/%.o, $(SRC))
-
-
-# ============================
-# 🧱 BUILD RULES
-# ============================
 
 all: $(NAME)
 
@@ -57,4 +66,4 @@ fclean: clean
 
 re: fclean all
 
-.PHONY: all clean fclean re test
+.PHONY: all clean fclean re

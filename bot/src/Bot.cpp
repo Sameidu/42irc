@@ -1,7 +1,7 @@
 # include <Bot.hpp>
 
 Bot::Bot(const std::string &ip, const int &port, const std::string &password)
-	: _fd(-1), _password(password), _nick("Bot"), _user("Bot"), _name("Bot"), _serverIp(ip), _serverPort(port) {
+	: _fd(-1), _running(true), _password(password), _nick("Bot"), _user("Bot"), _name("Bot"), _serverIp(ip), _serverPort(port) {
 		if (ip == "localhost")
 			_serverIp = "127.0.0.1";
 	}
@@ -10,8 +10,27 @@ Bot::~Bot() {}
 
 void Bot::start() {
 	connectToServer();
+	initCmds();
 	sendCredentials();
-	eventListen();
+	while (_running) {
+		readMsg(_fd);
+	}
+}
+
+void Bot::initCmds() {
+	_cmds.insert(std::pair<std::string, FCmd>("PASS", &Bot::CmPass));
+	_cmds.insert(std::pair<std::string, FCmd>("NICK", &Bot::CmNick));
+	_cmds.insert(std::pair<std::string, FCmd>("USER", &Bot::CmUser));
+	_cmds.insert(std::pair<std::string, FCmd>("CAP", &Bot::CmCAP));
+	_cmds.insert(std::pair<std::string, FCmd>("JOIN", &Bot::CmJoin));
+	_cmds.insert(std::pair<std::string, FCmd>("LIST", &Bot::CmList));
+	_cmds.insert(std::pair<std::string, FCmd>("PART", &Bot::CmPart));
+	_cmds.insert(std::pair<std::string, FCmd>("NAMES", &Bot::CmNames));
+	_cmds.insert(std::pair<std::string, FCmd>("TOPIC", &Bot::CmTopic)); // Solo para admins
+	_cmds.insert(std::pair<std::string, FCmd>("KICK", &Bot::CmKick)); // Solo para admins
+	_cmds.insert(std::pair<std::string, FCmd>("INVITE", &Bot::CmInvite)); // Solo para admins
+	_cmds.insert(std::pair<std::string, FCmd>("MODE", &Bot::CmMode)); // Solo para admins
+	_cmds.insert(std::pair<std::string, FCmd>("PRIVMSG", &Bot::CmPrivMsg));
 }
 
 void Bot::connectToServer() {
@@ -54,21 +73,140 @@ void Bot::sendCredentials() {
 		throw std::runtime_error("Error: sending USER command");
 }
 
-void Bot::eventListen() {
-	char buffer[MAX_BYTES_MSG];
-	while (true) {
-		std::memset(buffer, 0, sizeof(buffer));
-		int bytesReceived = recv(_fd, buffer, sizeof(buffer) - 1, 0);
-		if (bytesReceived < 0) {
-			if (errno == EAGAIN || errno == EWOULDBLOCK)
-				continue;
-			else
-				throw std::runtime_error("Error: receiving data from server");
-		} else if (bytesReceived == 0) {
-			std::cout << "Server closed the connection." << std::endl;
-			break;
+void Bot::readMsg(int fd) {
+	char msg[MAX_BYTES_MSG];
+
+	std::memset(msg, 0, sizeof(msg));
+	int bytesReceived = recv(fd, msg, sizeof(msg) - 1, 0);
+
+	if (bytesReceived < 0) {
+		if (errno == EAGAIN || errno == EWOULDBLOCK)
+			return;
+		else
+			throw std::runtime_error("Error: receiving data from server");
+	}
+	else if (bytesReceived == 0) {
+		std::cout << "Server closed the connection." << std::endl;
+		_running = false;
+	}
+
+	std::string aux = _bufferMsg;
+	aux.append(msg, bytesReceived);
+	_bufferMsg = aux;
+
+	std::string& buffer = _bufferMsg;
+	std::size_t pos;
+	while ((pos = buffer.find("\n")) != std::string::npos) {
+		std::string fullMsg = buffer.substr(0, pos);
+		buffer.erase(0, pos + 1);
+
+		t_msg parsedMsg = parseMsg(fullMsg);
+		handleCommand(parsedMsg, fd);
+	}
+}
+
+t_msg	Bot::parseMsg(std::string fullMsg)
+{
+	while (!fullMsg.empty() && (fullMsg[fullMsg.size() - 1] == '\r' || fullMsg[fullMsg.size() - 1] == '\n'))
+    	fullMsg.resize(fullMsg.size() - 1);
+
+	t_msg	msg;
+	msg.allMsg = fullMsg;
+	msg.hasTrailing = false;
+
+	size_t firstChar = fullMsg.find_first_not_of(' ');
+	if (firstChar != std::string::npos)
+    	fullMsg = fullMsg.substr(firstChar);
+
+	size_t firstSpace = fullMsg.find(' ');
+	std::string args;
+
+	if (firstSpace == std::string::npos) {
+		msg.prefix = fullMsg.substr(1, firstSpace);
+		args = "";
+	}
+	else {
+		msg.prefix = fullMsg.substr(1, firstSpace);
+		if (msg.prefix.find('!') != std::string::npos)
+			msg.from = msg.prefix.substr(0, msg.prefix.find('!'));
+		else
+			msg.from = "server";
+		args = fullMsg.substr(firstSpace + 1);
+	}
+
+	std::size_t trailingPos = args.find(':');
+	if (trailingPos != std::string::npos) {
+		msg.trailing = args.substr(trailingPos + 1);
+		msg.hasTrailing = true;
+		args = args.substr(0, trailingPos);
+	}
+	
+	while(!args.empty() && msg.params.size() < 13) {
+		size_t pos = args.find(' ');
+		std::string token;
+
+		if (pos == std::string::npos) {
+			token = args;
+			args.clear();
 		}
-		buffer[bytesReceived] = '\0';
-		std::cout << "Received: " << buffer << std::endl;
+		else {
+			token = args.substr(0, pos);
+			args = args.substr(pos + 1);
+		}
+
+		msg.params.push_back(token);
+
+		size_t nonSpace = args.find_first_not_of(' ');
+
+		if (nonSpace != std::string::npos)
+			args = args.substr(nonSpace);
+		else
+			args.clear();
+	}
+
+	if (trailingPos == std::string::npos && !args.empty() && msg.params.size() < 14) {
+		size_t pos = args.find(' ');
+		if (pos == std::string::npos)
+			msg.params.push_back(args);
+		else {
+			args = args.substr(0, pos);
+			msg.params.push_back(args);
+		}
+	}
+	if (msg.from == "server" && !msg.params.empty()) {
+		msg.code = strtol(msg.params[0].c_str(), NULL, 10);
+		msg.params.erase(msg.params.begin());
+	}
+	else if (!msg.params.empty()) {
+		msg.command = msg.params[0];
+		msg.params.erase(msg.params.begin());
+	}
+	return msg;
+}
+
+void Bot::handleCommand(t_msg &msg, int fd) {
+	(void)fd;
+	std::cout << PINK <<"Parsed message: " << msg.allMsg << CLEAR << std::endl;
+	std::cout << GREEN << "Prefix: " << msg.prefix <<  CLEAR << std::endl;
+
+	std::cout << BLUE << "From: " << msg.from <<  CLEAR << std::endl;
+	if (msg.code)
+		std::cout << YELLOW << "Code: " << msg.code <<  CLEAR << std::endl;
+	if (!msg.command.empty())
+		std::cout <<  YELLOW << "Command: " << msg.command << CLEAR << std::endl;
+
+	for (size_t i = 0; i < msg.params.size(); ++i)
+		std::cout << RED << "Param[" << i << "]: " << msg.params[i] << CLEAR << std::endl;
+	if (msg.hasTrailing)
+		std::cout << GREEN << "Trailing: " << msg.trailing <<  CLEAR << std::endl;
+
+	if (msg.from == "server") 
+		return ;
+	else {
+		std::map<std::string, FCmd>::iterator it = _cmds.find(msg.command);
+		if (it != _cmds.end())
+			(this->*(it->second))(msg, fd);
+		else 
+			std::cout << RED << "Command not recognized: " << msg.command << CLEAR << std::endl;
 	}
 }

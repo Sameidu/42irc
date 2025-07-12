@@ -38,7 +38,7 @@ class Server
 		std::string 						_serverName; /* TODO: cambiar en todos los prefix a esta var en vez poner el nombre con "ircserv"*/
 		std::string							_version;
 		std::string							_creationDate;
-		std::string							_userModes; /* TODO: esto cuales son? */
+		std::string							_userModes; /* TODO: borrar */
 		std::string							_chanModes;
 		
 		void	connectNewClient();
@@ -76,6 +76,7 @@ class Server
 		void manageRemoveMode(char mode, const std::string &channel, std::vector<std::string> &params, int fd);
 		void CmNames(t_msg &msg, int fd);
 		void CmWho(t_msg& msg, int fd);
+		void CmQuit(t_msg& msg, int fd);
 
 
 	public:

@@ -271,7 +271,6 @@ void Server::disconnectClient(int fd) {
 		throw std::runtime_error("Error: trying to disconnect a client that does not exist");
 	
 	Client *client = _clients[fd];
-	// TODO: Creo que hay que cambiar esto por el comando QUIT
 	for (std::map<std::string, Channel *>::iterator it = _channel.begin(); it != _channel.end(); ++it) {
 		if (_channel[it->first]->hasUser(client->getFd()))
 			_channel[it->first]->broadcastMessage(fd, "QUIT", _clients[fd]->getNickname(), "Disconnecting client");

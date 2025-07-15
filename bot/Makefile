@@ -22,19 +22,9 @@ vpath 	%.cpp src src/cmds
 
 SRC     :=	main.cpp \
 			Bot.cpp \
-			CmCAP.cpp \
 			CmInvite.cpp \
-			CmJoin.cpp \
-			CmKick.cpp \
-			CmList.cpp \
-			CmMode.cpp \
-			CmNames.cpp \
-			CmNick.cpp \
-			CmPart.cpp \
-			CmPass.cpp \
 			CmPrivmsg.cpp \
-			CmTopic.cpp \
-			CmUser.cpp \
+			CmJoin.cpp \
 
 
 OBJ = $(patsubst %.cpp, $(OBJ_DIR)/%.o, $(SRC))

@@ -72,19 +72,10 @@ class Bot {
 		//void sendMsg(const std::string &msg);
 		t_msg parseMsg(std::string fullMsg);
 
-		void CmCAP(t_msg& msg, int fd);
 		void CmInvite(t_msg &msg, int fd);
-		void CmJoin(t_msg &msg, int fd);
-		void CmKick(t_msg &msg, int fd);
-		void CmList(t_msg &msg, int fd);
-		void CmMode(t_msg &msg, int fd);
-		void CmNames(t_msg &msg, int fd);
-		void CmNick(t_msg &msg, int fd);
-		void CmPart(t_msg &msg, int fd);
-		void CmPass(t_msg &msg, int fd);
 		void CmPrivMsg(t_msg &msg, int fd);
-		void CmTopic(t_msg &msg, int fd);
-		void CmUser(t_msg &msg, int fd);
+		void CmJoin(t_msg &msg, int fd);
+
 
 	public:
 		Bot(const std::string &ip, const int &port, const std::string &password);
@@ -93,3 +84,18 @@ class Bot {
 		void start();
 		// void connectToServer();
 };
+
+template<typename T>
+void splitCmd(const std::string &cmd, T &result, const char del) {
+	size_t start = 0;
+	size_t comma;
+	while ((comma = cmd.find(del, start)) != std::string::npos) {
+		if (comma == start) {
+			start++;
+			continue;
+		}
+		result.push_back(cmd.substr(start, comma - start));
+		start = comma + 1;
+	}
+	result.push_back(cmd.substr(start));
+}

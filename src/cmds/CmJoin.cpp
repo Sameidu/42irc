@@ -24,7 +24,7 @@ void Server::CmJoin(t_msg &msg, int fd) {
 
 	// TODO: para el caso de 0 solo debe haber 1 parametro
 	for (size_t i = 0; i < channels.size(); ++i) {
-		if (channels[i][0] != '#' && channels[i][0] != '&' && channels[i] != "0") {
+		if ((channels[i][0] != '#' && channels[i][0] != '&') && channels[i] != "0") {
 			answerClient(fd, ERR_BADCHANMASK, "", "Channel name must start with #, & or 0");
 			return ;
 		}
@@ -49,6 +49,10 @@ void Server::CmJoin(t_msg &msg, int fd) {
 			}
 		}
 		else {
+			if (channels[i].size() < 2) {
+				answerClient(fd, ERR_NOSUCHCHANNEL, channels[i], "Channel name is too short");
+				continue ;
+			}
 			// Si no existe el canal crear uno nuevo, si pasan contraseña activar el modo k
 			if (_channel.find(channels[i]) == _channel.end()) {
 				Channel *newChannel = new Channel(channels[i]);

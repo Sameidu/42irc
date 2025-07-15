@@ -119,6 +119,8 @@ void Channel::disconnectUser(Client *client) {
 	}
 	if (isAdmin(client->getFd()))
 		removeAdminList(client);
+	if (isInvited(client->getFd()))
+		removeInvitedList(client);
 	client->leaveChannel(this);
 	_users.erase(client->getFd());
 }

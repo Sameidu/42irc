@@ -109,6 +109,10 @@ void splitCmd(const std::string &cmd, T &result, const char del) {
 	size_t start = 0;
 	size_t comma;
 	while ((comma = cmd.find(del, start)) != std::string::npos) {
+		if (comma == start) {
+			start++;
+			continue;
+		}
 		result.push_back(cmd.substr(start, comma - start));
 		start = comma + 1;
 	}

@@ -18,19 +18,9 @@ void Bot::start() {
 }
 
 void Bot::initCmds() {
-	_cmds.insert(std::pair<std::string, FCmd>("PASS", &Bot::CmPass));
-	_cmds.insert(std::pair<std::string, FCmd>("NICK", &Bot::CmNick));
-	_cmds.insert(std::pair<std::string, FCmd>("USER", &Bot::CmUser));
-	_cmds.insert(std::pair<std::string, FCmd>("CAP", &Bot::CmCAP));
-	_cmds.insert(std::pair<std::string, FCmd>("JOIN", &Bot::CmJoin));
-	_cmds.insert(std::pair<std::string, FCmd>("LIST", &Bot::CmList));
-	_cmds.insert(std::pair<std::string, FCmd>("PART", &Bot::CmPart));
-	_cmds.insert(std::pair<std::string, FCmd>("NAMES", &Bot::CmNames));
-	_cmds.insert(std::pair<std::string, FCmd>("TOPIC", &Bot::CmTopic)); // Solo para admins
-	_cmds.insert(std::pair<std::string, FCmd>("KICK", &Bot::CmKick)); // Solo para admins
-	_cmds.insert(std::pair<std::string, FCmd>("INVITE", &Bot::CmInvite)); // Solo para admins
-	_cmds.insert(std::pair<std::string, FCmd>("MODE", &Bot::CmMode)); // Solo para admins
+	_cmds.insert(std::pair<std::string, FCmd>("INVITE", &Bot::CmInvite));
 	_cmds.insert(std::pair<std::string, FCmd>("PRIVMSG", &Bot::CmPrivMsg));
+	_cmds.insert(std::pair<std::string, FCmd>("JOIN", &Bot::CmJoin));
 }
 
 void Bot::connectToServer() {

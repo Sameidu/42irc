@@ -51,11 +51,8 @@ void Server::CmInvite(t_msg &msg, int fd) {
 		answerClient(fd, ERR_BANNEDFROMCHAN, msg.params[1], "Cannot invite banned user");
 		return ;
 	}
-	if (_channel[msg.params[1]]->isInvited(invited)) {
-		answerClient(fd, ERR_USERONCHANNEL, msg.params[0], "is already invited to channel");
-		return ;
-	}
-	_channel[msg.params[1]]->addInvitedList(_clients[invited]);
+	if (!_channel[msg.params[1]]->isInvited(invited))
+		_channel[msg.params[1]]->addInvitedList(_clients[invited]);
 	msgClientToClient(fd, invited, "INVITE", msg.params[1]);
 	answerClient(fd, RPL_INVITING, _clients[invited]->getNickname(), msg.params[1]);
 }

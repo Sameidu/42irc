@@ -1,5 +1,8 @@
 #pragma once
 
+#ifndef CLIENT_HPP
+# define CLIENT_HPP
+
 # include <irc.hpp>
 # include <sys/socket.h>
 # include <netinet/in.h>
@@ -52,3 +55,4 @@ class Client
 };
 
 // TODO: Comprobar si es necesario compartir funciones.
+#endif

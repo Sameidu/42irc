@@ -18,14 +18,20 @@ CC      := c++
 CFLAGS  := -Wall -Wextra -Werror -std=c++98 -I$(DIR_INCLUDES)
 DEBUG	:= -g3 -fsanitize=address,leak,undefined
 
-vpath 	%.cpp src src/cmds
+vpath 	%.cpp src src/cmds src/botCmds
 
 SRC     :=	main.cpp \
 			Bot.cpp \
 			CmInvite.cpp \
 			CmPrivmsg.cpp \
 			CmJoin.cpp \
-
+			Help.cpp \
+			Dice.cpp \
+			Wisdom.cpp \
+			MagicBall.cpp \
+			Nones.cpp \
+			RPS.cpp \
+			SaySomething.cpp \
 
 OBJ = $(patsubst %.cpp, $(OBJ_DIR)/%.o, $(SRC))
 

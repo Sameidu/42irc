@@ -62,8 +62,6 @@ class Bot {
 		std::string	_serverIp;
 		int			_serverPort;
 
-		std::map<std::string, int> _counter;
-		std::map<std::string, int> _guess;
 		std::map<std::string, FCmd> _cmds;
 		std::map<std::string, botCmd> _botCmds;
 
@@ -86,8 +84,6 @@ class Bot {
 		std::string playRPS(std::vector<std::string> &words);
 		std::string oddEven(std::vector<std::string> &words);
 		std::string magic8Ball(std::vector<std::string> &words);
-		//std::string guessNumber(std::vector<std::string> &words);
-		//std::string counter(std::vector<std::string> &words);
 		std::string saySomething(std::vector<std::string> &words);
 
 	public:

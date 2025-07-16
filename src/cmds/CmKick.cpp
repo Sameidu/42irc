@@ -25,7 +25,11 @@ void Server::CmKick(t_msg &msg, int fd) {
 		answerClient(fd, ERR_CHANOPRIVSNEEDED, msg.params[0], "You're not channel operator");
 		return ;
 	}
-
+	if (_channel[msg.params[0]]->getName() == "#general") {
+		answerClient(fd, ERR_CHANOPRIVSNEEDED, msg.params[0], "You can't kick users from #general");
+		return ;
+	}
+	
 	std::vector<std::string> users;
 	splitCmd(msg.params[1], users, ',');
 	for (std::vector<std::string>::iterator it = users.begin(); it != users.end(); ++it) {

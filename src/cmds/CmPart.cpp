@@ -32,7 +32,9 @@ void Server::CmPart(t_msg &msg, int fd) {
 			sendMsgToClient(fd, "PART", *it, "Leaving... ");
 			_channel[*it]->broadcastMessage(fd, "PART", "", reason);
 			_channel[*it]->disconnectUser(_clients[fd]);
-			if (_channel[*it]->getUserCount() == 0) {
+			if (_channel[*it]->getUserCount() <= 1) {
+				if (_channel[*it]->hasUser("Bot"))
+					_channel[*it]->disconnectUser(_clients[_channel[*it]->getUserFd("Bot")]);
 				delete _channel[*it];
 				_channel.erase(*it);
 			}

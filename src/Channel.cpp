@@ -97,7 +97,8 @@ void Channel::disconnectUser(Client *client) {
 		if (_ownerFd == client->getFd()) {
 			if (_admins.size() > 1) {
 				removeAdminList(client);
-				_ownerFd = _admins.begin()->first;
+				if (_admins.begin()->second->getNickname() != "Bot")
+					_ownerFd = _admins.begin()->first;
 			}
 			else
 			_ownerFd = -1;
@@ -106,16 +107,20 @@ void Channel::disconnectUser(Client *client) {
 	if (_ownerFd == -1 && _users.size() > 1) {
 		for (std::map<int, Client *>::iterator it = _users.begin(); it != _users.end(); ++it) {
 			if (it->second->getFd() != client->getFd()) {
-				_ownerFd = it->first;
-				break;
+				if (it->second->getNickname() != "Bot") {
+					_ownerFd = it->first;
+					break;
+				}
 			}
 		}
-		_admins.insert(std::make_pair(_ownerFd, _users[_ownerFd]));
-		std::string reponse = ":" + _users[_ownerFd]->getNickname() + "!" + _users[_ownerFd]->getUsername() + "@localhost";
-		reponse += " MODE " + _name + " +o " + _users[_ownerFd]->getNickname() + "\r\n";
-		if (send(_ownerFd, reponse.c_str(), reponse.size(), MSG_EOR) < 0)
-			throw std::runtime_error("Error: sending msg to client");
-		broadcastMessage(client->getFd(), "MODE", _users[_ownerFd]->getNickname(), "+o " + _users[_ownerFd]->getNickname());
+		if (_ownerFd != -1) {
+			_admins.insert(std::make_pair(_ownerFd, _users[_ownerFd]));
+			std::string reponse = ":" + _users[_ownerFd]->getNickname() + "!" + _users[_ownerFd]->getUsername() + "@localhost";
+			reponse += " MODE " + _name + " +o " + _users[_ownerFd]->getNickname() + "\r\n";
+			if (send(_ownerFd, reponse.c_str(), reponse.size(), MSG_EOR) < 0)
+				throw std::runtime_error("Error: sending msg to client");
+			broadcastMessage(client->getFd(), "MODE", _users[_ownerFd]->getNickname(), "+o " + _users[_ownerFd]->getNickname());
+		}
 	}
 	if (isAdmin(client->getFd()))
 		removeAdminList(client);

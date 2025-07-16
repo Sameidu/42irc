@@ -27,7 +27,7 @@ void Bot::CmPrivMsg(t_msg &msg)
 			std::string response = (this->*(it->second))(words);
 			if (cmd == "!say") 
 				target = msg.from;
-			if (!response.empty())
+			if (!response.empty() && cmd != "!help")
 				sendMsg(target, response);
 		}
 		else

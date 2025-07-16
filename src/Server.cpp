@@ -275,6 +275,8 @@ void Server::disconnectClient(int fd) {
 		if (_channel[it->first]->hasUser(client->getFd()))
 			_channel[it->first]->broadcastMessage(fd, "QUIT", _clients[fd]->getNickname(), "Disconnecting client");
 		_channel[it->first]->disconnectUser(client);
+		if (_channel[it->first]->getUserCount() == 1 && _channel[it->first]->hasUser("Bot"))
+			_channel[it->first]->disconnectUser(_clients[_channel[it->first]->getUserFd("Bot")]);
 	}
 	if (epoll_ctl(_epollFd, EPOLL_CTL_DEL, fd, NULL) < 0)
 		throw std::runtime_error("Error: when removing client from epoll instance");
@@ -282,6 +284,12 @@ void Server::disconnectClient(int fd) {
 		throw std::runtime_error("Error: when closing client socket");
 	delete client;
 	_clients.erase(fd);
+	for (std::map<std::string, Channel *>::iterator it = _channel.begin(); it != _channel.end(); ++it) {
+		if (_channel[it->first]->getUserCount() == 0) {
+			delete _channel[it->first];
+			_channel.erase(it);
+		}
+	}
 	std::cout << GREEN << "Client disconnected successfully." << CLEAR << std::endl;
 }
 

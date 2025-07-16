@@ -3,8 +3,8 @@
 std::string Bot::enlightenMe(std::vector<std::string> &words) {
 	(void)words;
 	static const std::string wisdomWords[11] = {
-		"A veces la mejor decisión es no tomar ninguna decisión, que también es tomar una decisión",
-		"Cuanto peor, mejor para todos, y cuanto pero para todos, mejor, mejor para mí el suyo, beneficio político",
+		"'A veces la mejor decisión es no tomar ninguna decisión, que también es tomar una decisión' - Socrates",
+		"'Cuanto peor, mejor para todos, y cuanto pero para todos, mejor, mejor para mí el suyo, beneficio político' - ",
 		"Los españoles son muy españoles y mucho españoles",
 		"Exportar es positivo porque vendes lo que produces",
 		"Es el vecino el que elige al alcalde, y es el alcalde el que quiere que sean los vecinos el alcalde",

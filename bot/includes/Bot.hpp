@@ -34,6 +34,8 @@
 
 # define MAX_BYTES_MSG  512
 
+extern int sckt;
+
 typedef struct	s_msg
 {
 	std::string					allMsg;
@@ -91,7 +93,6 @@ class Bot {
 		~Bot();
 
 		void start();
-		// void connectToServer();
 };
 
 template<typename T>

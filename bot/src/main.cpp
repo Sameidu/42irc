@@ -1,5 +1,23 @@
 # include <Bot.hpp>
 
+int sckt;
+
+void	handleSignal(int signal) {
+	(void)signal;
+	std::string response = "QUIT\r\n";
+	if (send(sckt, response.c_str(), response.size(), MSG_EOR) < 0)
+		throw std::runtime_error("Manage signal");
+}
+
+void	runSignals() {
+	signal(SIGINT, handleSignal);
+	signal(SIGQUIT, handleSignal);
+	signal(SIGTSTP, handleSignal);
+	signal(SIGTERM, handleSignal);
+	signal(SIGTSTP, SIG_IGN);
+	signal(SIGPIPE, SIG_IGN);
+}
+
 int	parseArgs(const std::string &ip, const std::string &port, const std::string &password) {
 	if (ip.empty() || (inet_addr(ip.c_str()) == INADDR_NONE && ip != "localhost"))
 		throw std::invalid_argument("Invalid IP address.");
@@ -20,8 +38,8 @@ int	parseArgs(const std::string &ip, const std::string &port, const std::string 
 		throw std::invalid_argument("Password cannot be empty.");
 	return check;
 }
-
 int main(int argc, char **argv) {
+
 	if (argc != 4) {
 		std::cerr << "Usage: " << argv[0] << " <ip> <port> <password>" << std::endl;
 		return 1;
@@ -30,6 +48,7 @@ int main(int argc, char **argv) {
 	try {
 		int port = parseArgs(argv[1], argv[2], argv[3]);
 		Bot bot(argv[1], port, argv[3]);
+		runSignals();
 		bot.start();
 	} catch (const std::exception &e) {
 		std::cerr << "Error: " << e.what() << std::endl;

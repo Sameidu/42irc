@@ -25,8 +25,6 @@ void Bot::initBotCmds() {
 	_botCmds.insert(std::pair<std::string, botCmd>("!rps", &Bot::playRPS));
 	_botCmds.insert(std::pair<std::string, botCmd>("!nones", &Bot::oddEven));
 	_botCmds.insert(std::pair<std::string, botCmd>("!8ball", &Bot::magic8Ball));
-	// _botCmds.insert(std::pair<std::string, botCmd>("!guess", &Bot::guessNumber));
-	// _botCmds.insert(std::pair<std::string, botCmd>("!counter", &Bot::counter));
 	_botCmds.insert(std::pair<std::string, botCmd>("!say", &Bot::saySomething));
 }
 
@@ -41,6 +39,7 @@ void Bot::connectToServer() {
 	if (_fd < 0) 
 		throw std::runtime_error("Error: creating the socket for the bot");
 	std::cout << "Bot socket created with fd -> " << _fd << std::endl;
+	sckt = _fd;
 
 	int opt = 1;
 	if (setsockopt(_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0)

@@ -35,7 +35,7 @@ class Server
 		int									_epollFd;
 		std::map <std::string, FCmd>		_fCommands;
 		int 								_maxChannelUsers;
-		std::string 						_serverName; /* TODO: cambiar en todos los prefix a esta var en vez poner el nombre con "ircserv"*/
+		std::string 						_serverName;
 		std::string							_version;
 		std::string							_creationDate;
 		std::string							_chanModes;

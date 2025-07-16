@@ -54,9 +54,9 @@
 # define 	ERR_PASSWDMISMATCH		464
 
 /* NICK */
-# define	ERR_NONICKNAMEGIVEN		431 // Si no se da parámetro
-# define	ERR_ERRONEUSNICKNAME	432 // Si el nick contiene caracteres inválidos
-# define	ERR_NICKNAMEINUSE		433 // Si ya hay otro cliente con ese nick
+# define	ERR_NONICKNAMEGIVEN		431
+# define	ERR_ERRONEUSNICKNAME	432
+# define	ERR_NICKNAMEINUSE		433
 
 /* USER */
 # define ERR_NEEDMOREPARAMS         461
@@ -78,8 +78,8 @@
 # define RPL_ENDOFNAMES				366
 
 /* PART */
-# define	ERR_NOTONCHANNEL		442 // Si no estás en el canal
-# define	ERR_NOSUCHCHANNEL		403 // Si el canal no existe
+# define	ERR_NOTONCHANNEL		442
+# define	ERR_NOSUCHCHANNEL		403
 # define	ERR_USERNOTINCHANNEL	441
 
 /* LIST */
@@ -118,7 +118,7 @@
 # define RPL_AWAY                   301
 
 /* COMMANDOS */
-# define 	ERR_UNKNOWNCOMMAND		421 // comando desconocido
+# define 	ERR_UNKNOWNCOMMAND		421
 
 /* UTILS */
 bool	setNonBlocking(int fd);

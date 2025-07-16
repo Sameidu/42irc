@@ -3,7 +3,7 @@
 Client::~Client() {}
 
 Client::Client(const int fd, sockaddr_in *clientAddr) : _clientFd(fd), _clientAddr(clientAddr), _registrationState(RS_NoPass) {
-    (void)_clientAddr;
+    _ip = inet_ntoa(_clientAddr->sin_addr);
 }
 
 // GETTERS
@@ -21,6 +21,8 @@ std::string &Client::getBufferMsgClient() { return _bufferMsgClient; }
 std::vector<Channel*>& Client::getChannels() { return _channels; }
 
 int Client::getFd() const { return _clientFd; }
+
+const std::string Client::GetIp() const { return _ip; }
 
 // SETTERS
 

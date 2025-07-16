@@ -3,8 +3,6 @@
 #include <sstream>
 #include <string>
 
-// TODO: Añadir y tener en cuenta los modos 's' y 'p' (secreto y privado) de los canales
-
 void	Server::initCmds()
 {
 	_fCommands.insert(std::pair<std::string, FCmd>("PASS", &Server::CmPass));
@@ -15,10 +13,10 @@ void	Server::initCmds()
 	_fCommands.insert(std::pair<std::string, FCmd>("LIST", &Server::CmList));
 	_fCommands.insert(std::pair<std::string, FCmd>("PART", &Server::CmPart));
 	_fCommands.insert(std::pair<std::string, FCmd>("NAMES", &Server::CmNames));
-	_fCommands.insert(std::pair<std::string, FCmd>("TOPIC", &Server::CmTopic)); // Solo para admins
-	_fCommands.insert(std::pair<std::string, FCmd>("KICK", &Server::CmKick)); // Solo para admins
-	_fCommands.insert(std::pair<std::string, FCmd>("INVITE", &Server::CmInvite)); // Solo para admins
-	_fCommands.insert(std::pair<std::string, FCmd>("MODE", &Server::CmMode)); // Solo para admins
+	_fCommands.insert(std::pair<std::string, FCmd>("TOPIC", &Server::CmTopic));
+	_fCommands.insert(std::pair<std::string, FCmd>("KICK", &Server::CmKick));
+	_fCommands.insert(std::pair<std::string, FCmd>("INVITE", &Server::CmInvite));
+	_fCommands.insert(std::pair<std::string, FCmd>("MODE", &Server::CmMode));
 	_fCommands.insert(std::pair<std::string, FCmd>("PRIVMSG", &Server::CmPrivMsg));
 	_fCommands.insert(std::pair<std::string, FCmd>("WHO", &Server::CmWho));
 	_fCommands.insert(std::pair<std::string, FCmd>("QUIT", &Server::CmQuit));
@@ -27,19 +25,19 @@ void	Server::initCmds()
 std::string Server::makePrefix(int fd) {
   return ":" + _clients[fd]->getNickname()
        + "!" + _clients[fd]->getUsername()
-       + "@localhost";
+       + _clients[fd]->GetIp();
 }
 
 void Server::answerClient(int fdClient, int code, const std::string &target, const std::string &msg)
 {
 	std::ostringstream ss;
-	ss << std::setfill('0') << std::setw(3) << code;  // código en 3 dígitos
+	ss << std::setfill('0') << std::setw(3) << code;
 	std::string codeStr = ss.str();
 
 	std::string nickname = _clients[fdClient]->getNickname();
 	if (nickname.empty())
 		nickname = "unknown";
-	std::string response = ":localhost " + codeStr + " " + nickname;
+	std::string response = ":" + _serverName + " " + codeStr + " " + nickname;
 	
 	if (!target.empty())
 		response += " " + target;
@@ -47,25 +45,10 @@ void Server::answerClient(int fdClient, int code, const std::string &target, con
 
 	std::cout << GREEN << response << CLEAR << std::endl;
 	if (send(fdClient, response.c_str(), response.size(), MSG_EOR) < 0)
-		throw std::runtime_error("Error: sending msg to client");
+		throw std::runtime_error("Sending msg to client");
 }
 
 
-/**
- * @brief Envía un mensaje IRC directo a un cliente, sin código numérico.
- *
- * Esta función está pensada para comandos como PRIVMSG o PART, que requieren
- * mensajes directos entre usuarios o notificaciones de eventos, y no respuestas
- * del servidor con códigos numéricos. Por eso, el mensaje se construye siguiendo
- * el formato estándar de IRC con prefijo (nick!user@host), comando, destino y mensaje,
- * pero sin incluir ningún código de respuesta numérico, ya que el cliente no espera
- * ni interpreta códigos en este tipo de mensajes.
- *
- * @param fd        Descriptor del cliente destinatario.
- * @param cmd       Comando IRC (por ejemplo, "PRIVMSG", "PART").
- * @param channel   Canal o destino del mensaje.
- * @param msg       Contenido del mensaje.
- */
 
 void Server::sendMsgToClient(int fd, const std::string &cmd, const std::string &channel, const std::string &msg) {
 	std::string prefix = makePrefix(fd);
@@ -75,7 +58,7 @@ void Server::sendMsgToClient(int fd, const std::string &cmd, const std::string &
 		response += " :" + msg;
 	response += "\r\n";
 	if (send(fd, response.c_str(), response.size(), MSG_EOR) < 0)
-		throw std::runtime_error("Error: sending msg to client");
+		throw std::runtime_error("Sending msg to client");
 }
 
 void Server::msgClientToClient(int from, int to, const std::string &cmd, const std::string &msg) {
@@ -86,7 +69,7 @@ void Server::msgClientToClient(int from, int to, const std::string &cmd, const s
 		response += " :" + msg;
 	response += "\r\n";
 	if (send(to, response.c_str(), response.size(), MSG_EOR) < 0)
-		throw std::runtime_error("Error: sending msg to client");
+		throw std::runtime_error("Sending msg to client");
 }
 
 void	Server::sendWelcomeMsg(int fdClient)

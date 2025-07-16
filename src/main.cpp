@@ -1,22 +1,16 @@
 #include <irc.hpp>
 #include <Server.hpp>
 
-//volatile sig_atomic_t g_signal = 0;
-
 void	handleSignal(int signal) {
 	(void)signal;
 		std::cout << "\nManage Signal..." << std::endl;
 }
 
-
-// Si corre con test tener este SIGTSTP comentado, si no, comentar
-// SIGTSTP para que no se quede parado el server al hacer Ctrl+Z
 void	runSignals() {
 	signal(SIGINT, handleSignal);
 	signal(SIGQUIT, handleSignal);
-	//signal(SIGTSTP, handleSignal);
+	signal(SIGTSTP, handleSignal);
 	signal(SIGTERM, handleSignal);
-	signal(SIGTSTP, SIG_IGN);
 	signal(SIGPIPE, SIG_IGN);
 }
 

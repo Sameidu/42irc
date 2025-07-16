@@ -11,10 +11,10 @@
 class Channel;
 
 enum RegistrationStatus {
-    RS_NoPass = 0,        // Aún no ha enviado PASS
-    RS_PassValidated,     // PASS correcto recibido
-    RS_NickValidated,     // NICK recibido
-    RS_Registered         // USER recibido → registro completo
+    RS_NoPass = 0,
+    RS_PassValidated,
+    RS_NickValidated,
+    RS_Registered
 };
 
 class Client
@@ -28,6 +28,7 @@ class Client
 		RegistrationStatus		_registrationState;
 		std::string				_bufferMsgClient;
 		std::vector<Channel*>	_channels;
+		std::string				_ip;
 
 	public:
 		Client(const int fd, sockaddr_in *clientAddr);
@@ -41,6 +42,7 @@ class Client
 		int getFd() const;
 		std::string &getBufferMsgClient();
 		std::vector<Channel*>& getChannels();
+		const std::string GetIp() const;
 
 		// Setters
 		void setUsername(const std::string &username);
@@ -54,5 +56,4 @@ class Client
 
 };
 
-// TODO: Comprobar si es necesario compartir funciones.
 #endif

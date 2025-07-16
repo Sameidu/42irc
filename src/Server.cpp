@@ -11,6 +11,7 @@ Server::Server( const int &port, const std::string &password )
 Server::~Server() {
 	for (std::map<int, Client *>::iterator it = _clients.begin(); it != _clients.end(); ++it) {
 		if (it->second) {
+			/*NOTE: */
 			std::cout << "Closing client with fd: " << it->second->getFd() << std::endl;
 			if (_epollFd >= 0)
 				epoll_ctl(_epollFd, EPOLL_CTL_DEL, it->second->getFd(), NULL);
@@ -29,67 +30,54 @@ Server::~Server() {
 		close(_socketFd);
 	if (_epollFd >= 0)
 		close(_epollFd);
+
+	/*NOTE: */
 	std::cout << "Server closed" << std::endl;
 }
 
 void Server::init() {
-	/* 1. IPv4 (AF_INET) and TCP (SOCK_STREAM) */
 	_socketFd = socket(AF_INET, SOCK_STREAM, 0);
 	if (_socketFd < 0) 
-		throw std::runtime_error("Error: creating the socket server");
+		throw std::runtime_error("Creating the socket server");
+	/*NOTE: */
 	std::cout << "Socket created with fd -> " << _socketFd << std::endl;
 
-	/* 2. Allows the port to be reused immediately after closing the socket */
 	int	opt = 1;
 	if (setsockopt(_socketFd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0)
-		throw std::runtime_error("Error: when setting SO_REUSEADDR");
-	else
-		std::cout << "SO_REUSEADDR set successfully" << std::endl;
+		throw std::runtime_error("When setting SO_REUSEADDR");
 
-	/* 3. change the fd flags to make the file non-blocking*/
 	if (!setNonBlocking(_socketFd))
 		throw std::runtime_error("Error: setting flags to non blocking");
-	else
-		std::cout << "Socket set to non-blocking mode" << std::endl;
 
-	/* 4. Init values at addr server struct */
 	std::memset(&_servAddr, 0, sizeof(_servAddr));
 	_servAddr.sin_family = AF_INET; 
 	_servAddr.sin_addr.s_addr = INADDR_ANY; 
 	_servAddr.sin_port = htons(_port); 
 
-	/* 5. Associate a socket with the IP address and port */
 	if (bind(_socketFd, (sockaddr*)&_servAddr, sizeof(_servAddr)) < 0)
-		throw std::runtime_error("Error: when using bind()");
+		throw std::runtime_error("When using bind()");
 
-	/* 6. Put the socket in listening mode */
 	if (listen(_socketFd, 5) < 0)
-		throw std::runtime_error("Error: when using listen()");
+		throw std::runtime_error("When using listen()");
 
-	/* 7. Create epoll instance */
 	_epollFd = epoll_create1(0);
 	if (_epollFd < 0)
-		throw std::runtime_error("Error: when creating epoll instance");
+		throw std::runtime_error("When creating epoll instance");
 
-	/* 8. Add the socket to the epoll instance */
 	epoll_event ev;
 	ev.events = EPOLLIN;
 	ev.data.fd = _socketFd; 
 	if (epoll_ctl(_epollFd, EPOLL_CTL_ADD, _socketFd, &ev) < 0)
-		throw std::runtime_error("Error: when adding the socket to the epoll instance");
+		throw std::runtime_error("When adding the socket to the epoll instance");
 
-	/* 9. Add stdin to epoll instance */
 	fcntl(STDIN_FILENO, F_SETFL, O_NONBLOCK);
 	epoll_event stdin_ev;
 	stdin_ev.events = EPOLLIN;
 	stdin_ev.data.fd = STDIN_FILENO;
 	if (epoll_ctl(_epollFd, EPOLL_CTL_ADD, STDIN_FILENO, &stdin_ev) < 0)
-		throw std::runtime_error("Error: when adding stdin to epoll instance");
+		throw std::runtime_error("When adding stdin to epoll instance");
 
-	/* 10. Create std::map for commands */
 	initCmds();
-
-	/* 11. Init other data*/
 	_creationDate = currentDateTimeString();
 
 	/* NOTE:  11. Print server info */
@@ -113,17 +101,17 @@ void	Server::connectNewClient()
 
 	int client_fd = accept(_socketFd, (sockaddr*)&client_addr, &client_len);
 	if (client_fd < 0)
-		throw std::runtime_error("Error: Client dont works");
+		throw std::runtime_error("Client dont works");
 
 	if (!setNonBlocking(client_fd))
-		throw std::runtime_error("Error: setting flags to non blocking for client");
+		throw std::runtime_error("Setting flags to non blocking for client");
 
 	Client	*auxClient = new Client(client_fd, &client_addr);
 	epoll_event ev;
 	ev.events = EPOLLIN | EPOLLRDHUP;
 	ev.data.fd = client_fd;
 	if (epoll_ctl(_epollFd, EPOLL_CTL_ADD, client_fd, &ev) < 0)
-		throw std::runtime_error("Error: when add new client to epoll");
+		throw std::runtime_error("When add new client to epoll");
 	_clients.insert(std::pair<int, Client*>(client_fd, auxClient));
 
 	/* NOTE: Client Data */
@@ -135,7 +123,8 @@ void	Server::connectNewClient()
 
 t_msg	Server::parseMsg(std::string fullMsg)
 {
-	std::cout << "Mensaje recibido:\n" << BLUE << fullMsg << CLEAR << std::endl;
+	/* NOTE: */
+	std::cout << "FULL MSG RECIVED:\n" << BLUE << fullMsg << CLEAR << std::endl;
 
 	while (!fullMsg.empty() && (fullMsg[fullMsg.size() - 1] == '\r' || fullMsg[fullMsg.size() - 1] == '\n'))
     	fullMsg.resize(fullMsg.size() - 1);
@@ -221,7 +210,7 @@ void	Server::readMsg(int fd)
 	int bytes_recived =  recv(fd, &msg, MAX_BYTES_MSG, 0);
 
 	if (bytes_recived < 0)
-		throw std::runtime_error("Error: on recv()");
+		throw std::runtime_error("On recv()");
 
     std::string aux = _clients[fd]->getBufferMsgClient();
     aux.append(msg, bytes_recived);
@@ -245,20 +234,20 @@ void	Server::readMsg(int fd)
 
 void Server::disconnectClient(int fd) {
 	if (_clients.find(fd) == _clients.end()) 
-		throw std::runtime_error("Error: trying to disconnect a client that does not exist");
+		throw std::runtime_error("Trying to disconnect a client that does not exist");
 	
 	Client *client = _clients[fd];
 	for (std::map<std::string, Channel *>::iterator it = _channel.begin(); it != _channel.end(); ++it) {
-		if (_channel[it->first]->hasUser(client->getFd()))
-			_channel[it->first]->broadcastMessage(fd, "QUIT", _clients[fd]->getNickname(), "Disconnecting client");
+		/*if (_channel[it->first]->hasUser(client->getFd()))
+			_channel[it->first]->broadcastMessage(fd, "QUIT", _clients[fd]->getNickname(), "Disconnecting client");*/
 		_channel[it->first]->disconnectUser(client);
 		if (_channel[it->first]->getUserCount() == 1 && _channel[it->first]->hasUser("Bot"))
 			_channel[it->first]->disconnectUser(_clients[_channel[it->first]->getUserFd("Bot")]);
 	}
 	if (epoll_ctl(_epollFd, EPOLL_CTL_DEL, fd, NULL) < 0)
-		throw std::runtime_error("Error: when removing client from epoll instance");
+		throw std::runtime_error("When removing client from epoll instance");
 	if (close(fd) < 0) 
-		throw std::runtime_error("Error: when closing client socket");
+		throw std::runtime_error("When closing client socket");
 	delete client;
 	_clients.erase(fd);
 	for (std::map<std::string, Channel *>::iterator it = _channel.begin(); it != _channel.end(); ++it) {
@@ -278,6 +267,7 @@ void  Server::manageServerInput() {
 		return ;
 	if (input == "exit" || input == "quit") {
 		_running = false;
+		/* NOTE: */
 		std::cout << PINK << "Server is shutting down..." << CLEAR << std::endl;
 	}
 	else if (input == "clients") {
@@ -345,7 +335,7 @@ void Server::run() {
 				_running = false;
 				continue;
 			}
-			throw std::runtime_error("Error: when waiting for events");
+			throw std::runtime_error("When waiting for events");
 		}
 		try {
 			for (int i = 0; i < numEvents; i++) {
@@ -365,7 +355,7 @@ void Server::run() {
 			}
 		}
 		catch (const std::exception &e) {
-			std::cerr << RED << "ErrorUwU: " << CLEAR << e.what() << std::endl;
+			std::cerr << RED << "Error: " << CLEAR << e.what() << std::endl;
 		}
 	}
 }

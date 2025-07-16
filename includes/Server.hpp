@@ -38,7 +38,6 @@ class Server
 		std::string 						_serverName; /* TODO: cambiar en todos los prefix a esta var en vez poner el nombre con "ircserv"*/
 		std::string							_version;
 		std::string							_creationDate;
-		std::string							_userModes; /* TODO: esto cuales son? */
 		std::string							_chanModes;
 		
 		void	connectNewClient();
@@ -54,7 +53,6 @@ class Server
 		void	msgClientToClient(int from, int to, const std::string &cmd, const std::string &msg);
 		void	sendWelcomeMsg(int fdClient);
 		void	joinGeneralChannel(int fdClient);
-		void	sendISupport(int fdClient);
 		std::string makePrefix(int fd);
 
 
@@ -76,6 +74,7 @@ class Server
 		void manageRemoveMode(char mode, const std::string &channel, std::vector<std::string> &params, int fd);
 		void CmNames(t_msg &msg, int fd);
 		void CmWho(t_msg& msg, int fd);
+		void CmQuit(t_msg& msg, int fd);
 
 
 	public:
@@ -108,6 +107,10 @@ void splitCmd(const std::string &cmd, T &result, const char del) {
 	size_t start = 0;
 	size_t comma;
 	while ((comma = cmd.find(del, start)) != std::string::npos) {
+		if (comma == start) {
+			start++;
+			continue;
+		}
 		result.push_back(cmd.substr(start, comma - start));
 		start = comma + 1;
 	}

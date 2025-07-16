@@ -21,7 +21,7 @@ void	Server::initCmds()
 	_fCommands.insert(std::pair<std::string, FCmd>("MODE", &Server::CmMode)); // Solo para admins
 	_fCommands.insert(std::pair<std::string, FCmd>("PRIVMSG", &Server::CmPrivMsg));
 	_fCommands.insert(std::pair<std::string, FCmd>("WHO", &Server::CmWho));
-	//_fCommands.insert(std::pair<std::string, FCmd>("QUIT", &Server::CmQuit));
+	_fCommands.insert(std::pair<std::string, FCmd>("QUIT", &Server::CmQuit));
 }
 
 std::string Server::makePrefix(int fd) {
@@ -99,9 +99,7 @@ void	Server::sendWelcomeMsg(int fdClient)
 
     answerClient(fdClient, RPL_CREATED, "", "This server was created " + _creationDate);
 
-    answerClient(fdClient, RPL_MYINFO, "", _serverName + " " + _version + " " + _userModes + " " + _chanModes);
-
-    // TODO: sendISupport(fdClient); no es obligatorio y no me apetece hacerlo
+    answerClient(fdClient, RPL_MYINFO, "", _serverName + " " + _version + " " + _chanModes);
 }
 
 void	Server::joinGeneralChannel(int fdClient)

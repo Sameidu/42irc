@@ -11,26 +11,29 @@ Bot::~Bot() {}
 void Bot::start() {
 	connectToServer();
 	initCmds();
+	initBotCmds();
 	sendCredentials();
 	while (_running) {
-		readMsg(_fd);
+		readMsg();
 	}
 }
 
+void Bot::initBotCmds() {
+	_botCmds.insert(std::pair<std::string, botCmd>("!help", &Bot::helpMsg));
+	_botCmds.insert(std::pair<std::string, botCmd>("!wisdom", &Bot::enlightenMe));
+	_botCmds.insert(std::pair<std::string, botCmd>("!dice", &Bot::rollDice));
+	_botCmds.insert(std::pair<std::string, botCmd>("!rps", &Bot::playRPS));
+	_botCmds.insert(std::pair<std::string, botCmd>("!nones", &Bot::oddEven));
+	_botCmds.insert(std::pair<std::string, botCmd>("!8ball", &Bot::magic8Ball));
+	// _botCmds.insert(std::pair<std::string, botCmd>("!guess", &Bot::guessNumber));
+	// _botCmds.insert(std::pair<std::string, botCmd>("!counter", &Bot::counter));
+	_botCmds.insert(std::pair<std::string, botCmd>("!say", &Bot::saySomething));
+}
+
 void Bot::initCmds() {
-	_cmds.insert(std::pair<std::string, FCmd>("PASS", &Bot::CmPass));
-	_cmds.insert(std::pair<std::string, FCmd>("NICK", &Bot::CmNick));
-	_cmds.insert(std::pair<std::string, FCmd>("USER", &Bot::CmUser));
-	_cmds.insert(std::pair<std::string, FCmd>("CAP", &Bot::CmCAP));
-	_cmds.insert(std::pair<std::string, FCmd>("JOIN", &Bot::CmJoin));
-	_cmds.insert(std::pair<std::string, FCmd>("LIST", &Bot::CmList));
-	_cmds.insert(std::pair<std::string, FCmd>("PART", &Bot::CmPart));
-	_cmds.insert(std::pair<std::string, FCmd>("NAMES", &Bot::CmNames));
-	_cmds.insert(std::pair<std::string, FCmd>("TOPIC", &Bot::CmTopic)); // Solo para admins
-	_cmds.insert(std::pair<std::string, FCmd>("KICK", &Bot::CmKick)); // Solo para admins
-	_cmds.insert(std::pair<std::string, FCmd>("INVITE", &Bot::CmInvite)); // Solo para admins
-	_cmds.insert(std::pair<std::string, FCmd>("MODE", &Bot::CmMode)); // Solo para admins
+	_cmds.insert(std::pair<std::string, FCmd>("INVITE", &Bot::CmInvite));
 	_cmds.insert(std::pair<std::string, FCmd>("PRIVMSG", &Bot::CmPrivMsg));
+	_cmds.insert(std::pair<std::string, FCmd>("JOIN", &Bot::CmJoin));
 }
 
 void Bot::connectToServer() {
@@ -73,11 +76,11 @@ void Bot::sendCredentials() {
 		throw std::runtime_error("Error: sending USER command");
 }
 
-void Bot::readMsg(int fd) {
+void Bot::readMsg() {
 	char msg[MAX_BYTES_MSG];
 
 	std::memset(msg, 0, sizeof(msg));
-	int bytesReceived = recv(fd, msg, sizeof(msg) - 1, 0);
+	int bytesReceived = recv(_fd, msg, sizeof(msg) - 1, 0);
 
 	if (bytesReceived < 0) {
 		if (errno == EAGAIN || errno == EWOULDBLOCK)
@@ -101,7 +104,7 @@ void Bot::readMsg(int fd) {
 		buffer.erase(0, pos + 1);
 
 		t_msg parsedMsg = parseMsg(fullMsg);
-		handleCommand(parsedMsg, fd);
+		handleCommand(parsedMsg);
 	}
 }
 
@@ -184,8 +187,15 @@ t_msg	Bot::parseMsg(std::string fullMsg)
 	return msg;
 }
 
-void Bot::handleCommand(t_msg &msg, int fd) {
-	(void)fd;
+void Bot::sendMsg(std::string &to, const std::string &msg) {
+	std::string fullMsg = "PRIVMSG " + to + " :" + msg + "\r\n";
+	if (send(_fd, fullMsg.c_str(), fullMsg.size(), MSG_EOR) < 0) {
+		std::cerr << "Error sending message to " << to << std::endl;
+		return ;
+	}
+}
+
+void Bot::handleCommand(t_msg &msg) {
 	std::cout << PINK <<"Parsed message: " << msg.allMsg << CLEAR << std::endl;
 	std::cout << GREEN << "Prefix: " << msg.prefix <<  CLEAR << std::endl;
 
@@ -200,12 +210,17 @@ void Bot::handleCommand(t_msg &msg, int fd) {
 	if (msg.hasTrailing)
 		std::cout << GREEN << "Trailing: " << msg.trailing <<  CLEAR << std::endl;
 
-	if (msg.from == "server") 
+	if (msg.from == "server") {
+		if (msg.code == 433) {
+			std::cerr << RED << "Nickname already in use, please change it." << CLEAR << std::endl;
+			_running = false;
+		}
 		return ;
+	}
 	else {
 		std::map<std::string, FCmd>::iterator it = _cmds.find(msg.command);
 		if (it != _cmds.end())
-			(this->*(it->second))(msg, fd);
+			(this->*(it->second))(msg);
 		else 
 			std::cout << RED << "Command not recognized: " << msg.command << CLEAR << std::endl;
 	}

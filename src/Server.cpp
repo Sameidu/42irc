@@ -1,15 +1,12 @@
 #include <Server.hpp>
 
-/* TODO: Como gestionamos errores con try catch¿?¿ de momento estoy mandando cuando falla con throw*/
-// Puertos del estandar: 6665-6669 
-
 const int &Server::getPort() const { return _port; }
 
 const std::string &Server::getPassword() const { return _password; }
 
 Server::Server( const int &port, const std::string &password )
 	: _port(port), _password(password), _running(true), _socketFd(-1), _epollFd(-1), _maxChannelUsers(15),
-	   _serverName ("ircserver.com"), _version("ChatServ-1.0"), _userModes("ix"), _chanModes("itoblk") {}
+	   _serverName ("ircserver.com"), _version("ChatServ-1.0"), _chanModes("itoblk") {}
 
 Server::~Server() {
 	for (std::map<int, Client *>::iterator it = _clients.begin(); it != _clients.end(); ++it) {
@@ -41,30 +38,31 @@ void Server::init() {
 	if (_socketFd < 0) 
 		throw std::runtime_error("Error: creating the socket server");
 	std::cout << "Socket created with fd -> " << _socketFd << std::endl;
+
 	/* 2. Allows the port to be reused immediately after closing the socket */
 	int	opt = 1;
 	if (setsockopt(_socketFd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0)
 		throw std::runtime_error("Error: when setting SO_REUSEADDR");
 	else
 		std::cout << "SO_REUSEADDR set successfully" << std::endl;
-	/* 3. change the fd flags to make the file non-blocking ---> esta en utils.cpp la funcion*/
-	// TODO: Revisar fcntl() acorde con subject
+
+	/* 3. change the fd flags to make the file non-blocking*/
 	if (!setNonBlocking(_socketFd))
 		throw std::runtime_error("Error: setting flags to non blocking");
 	else
 		std::cout << "Socket set to non-blocking mode" << std::endl;
+
 	/* 4. Init values at addr server struct */
 	std::memset(&_servAddr, 0, sizeof(_servAddr));
 	_servAddr.sin_family = AF_INET; 
 	_servAddr.sin_addr.s_addr = INADDR_ANY; 
 	_servAddr.sin_port = htons(_port); 
-			
+
 	/* 5. Associate a socket with the IP address and port */
 	if (bind(_socketFd, (sockaddr*)&_servAddr, sizeof(_servAddr)) < 0)
 		throw std::runtime_error("Error: when using bind()");
-	/* 6. Put the socket in listening mode
-	// TODO: he puesto en 5 el numero maximo de conexiones que pueden estar en la cola pero no se que es mejor
-	cuantos clientes deberian poder intentarse conectar al mismo tiempo??*/
+
+	/* 6. Put the socket in listening mode */
 	if (listen(_socketFd, 5) < 0)
 		throw std::runtime_error("Error: when using listen()");
 
@@ -79,9 +77,6 @@ void Server::init() {
 	ev.data.fd = _socketFd; 
 	if (epoll_ctl(_epollFd, EPOLL_CTL_ADD, _socketFd, &ev) < 0)
 		throw std::runtime_error("Error: when adding the socket to the epoll instance");
-
-	// Channel *generalChannel = new Channel("general");
-	// _channel.insert(std::pair<std::string, Channel *>("general", generalChannel));
 
 	/* 9. Add stdin to epoll instance */
 	fcntl(STDIN_FILENO, F_SETFL, O_NONBLOCK);
@@ -106,7 +101,6 @@ void Server::init() {
 	std::cout << "Server port (network byte order): " << ntohs(_servAddr.sin_port) << std::endl;
 	std::cout << "Server port (host byte order): " << _servAddr.sin_port << std::endl;
 	std::cout << "Server address family: " << _servAddr.sin_family << std::endl << std::endl;
-
 	std::cout << "Welcome to the IRC server!" << std::endl;
 	std::cout << "Type 'help' for a list of commands." << std::endl;
 	std::cout << "Type 'exit' or 'quit' to stop the server." << std::endl;
@@ -119,7 +113,7 @@ void	Server::connectNewClient()
 
 	int client_fd = accept(_socketFd, (sockaddr*)&client_addr, &client_len);
 	if (client_fd < 0)
-		throw std::runtime_error("El cliente no furula");
+		throw std::runtime_error("Error: Client dont works");
 
 	if (!setNonBlocking(client_fd))
 		throw std::runtime_error("Error: setting flags to non blocking for client");
@@ -132,9 +126,9 @@ void	Server::connectNewClient()
 		throw std::runtime_error("Error: when add new client to epoll");
 	_clients.insert(std::pair<int, Client*>(client_fd, auxClient));
 
-	// NOTE: borrar
-	std::cout << "Cliente conectado con fd: " << client_fd << std::endl;
-	std::cout << "Cliente conectado desde: " 
+	/* NOTE: Client Data */
+	std::cout << "Client fd connected with fd: " << client_fd << std::endl;
+	std::cout << " Client connected from: "
 	<< inet_ntoa(client_addr.sin_addr) << ":" 
 	<< ntohs(client_addr.sin_port) << std::endl;
 }
@@ -143,25 +137,20 @@ t_msg	Server::parseMsg(std::string fullMsg)
 {
 	std::cout << "Mensaje recibido:\n" << BLUE << fullMsg << CLEAR << std::endl;
 
-	/* 1. Me aseguro de que no quedan \r o \n por el msg los mando al final y los borro */
 	while (!fullMsg.empty() && (fullMsg[fullMsg.size() - 1] == '\r' || fullMsg[fullMsg.size() - 1] == '\n'))
     	fullMsg.resize(fullMsg.size() - 1);
 
 	t_msg	msg;
-
-	/* guardo todo el msg */
 	msg.allMsg = fullMsg;
 
-	/* 2. elimina espacios iniciales */
 	size_t firstChar = fullMsg.find_first_not_of(' ');
 	if (firstChar != std::string::npos)
     	fullMsg = fullMsg.substr(firstChar);
 
-	/* 3. busca primer espacio y guarda la primera palabra que deberia de ser el comando */
 	size_t firstSpace = fullMsg.find(' ');
 	std::string args;
 
-	if (firstSpace == std::string::npos) // solo te mandan un comando sin args
+	if (firstSpace == std::string::npos)
 	{
 		msg.command = fullMsg;
 		args = "";
@@ -169,54 +158,44 @@ t_msg	Server::parseMsg(std::string fullMsg)
 	else
 	{
 		msg.command = fullMsg.substr(0, firstSpace);
-		/* 4. quito el comando y guardo el resto como agumentos */
 		args = fullMsg.substr(firstSpace + 1);
 	}
 
-	/* 5. busco si tiene trailing ':' y lo separo */
 	std::size_t trailingPos = args.find(':');
 	if (trailingPos != std::string::npos)
 	{
 		msg.trailing = args.substr(trailingPos + 1);
 		msg.hasTrailing = true;
-		args = args.substr(0, trailingPos); // quito el trailing si hay 
+		args = args.substr(0, trailingPos);
 	}
-	
-	/* 6. mientras haya args y sean menos a 13 (max params)*/
 
-	while(!args.empty() && msg.params.size() < 13)
+	while(!args.empty() && msg.params.size() < MAX_PARAMS)
 	{
 		size_t pos = args.find(' ');
-		std::string token; // guardamos el siguiente param
+		std::string token;
 
-		// Si no hemos encontrado más espacios → el resto del string es un token completo
 		if (pos == std::string::npos)
 		{
-			token = args; // Todo args es el token
-			args.clear(); // Ya no queda nada por procesar
+			token = args;
+			args.clear();
 		}
 		else
 		{
-			// Hemos encontrado un espacio → el token es lo que hay antes del espacio
 			token = args.substr(0, pos);
-			// Quitamos el token y el espacio
 			args = args.substr(pos + 1);
 		}
 
-		// Añadimos el token al vector de params
 		msg.params.push_back(token);
-
-		// Saltamos los espacios en blanco que puedan quedar al principio de args
 		size_t nonSpace = args.find_first_not_of(' ');
 
 		if (nonSpace != std::string::npos)
-			args = args.substr(nonSpace); // Quitamos los espacios
+			args = args.substr(nonSpace);
 		else
-			args.clear(); // Si solo quedaban espacios → vaciamos args
+			args.clear();
 	}
-
-	/* si no tiene trailing el protocolo admite 14 parametros si hay mas los ignoro y los pierdo */
-	if (trailingPos == std::string::npos && !args.empty() && msg.params.size() < 14)
+	/* If there is no trailing, the protocol supports 14 parameters. 
+		If there are more, I ignore them and lose them. */
+	if (trailingPos == std::string::npos && !args.empty() && msg.params.size() < MAX_PARAMS + 1)
 	{
 		size_t pos = args.find(' ');
 		if (pos == std::string::npos)
@@ -233,7 +212,8 @@ t_msg	Server::parseMsg(std::string fullMsg)
 
 void	Server::readMsg(int fd)
 {
-	std::cout << "Evento recibido de fd: " << fd << std::endl;
+	/* NOTE: */
+	std::cout << "Event received from fd: " << fd << std::endl;
 
 	char	msg[MAX_BYTES_MSG];
 	std::memset(msg, 0, sizeof(msg));
@@ -243,25 +223,22 @@ void	Server::readMsg(int fd)
 	if (bytes_recived < 0)
 		throw std::runtime_error("Error: on recv()");
 
-	std::cout << "Numero de bytes recibidos en el msg: " << bytes_recived << std::endl;
-
-	// Acumular siempre lo recibido en el buffer del cliente
     std::string aux = _clients[fd]->getBufferMsgClient();
-    aux.append(msg, bytes_recived); // Usar bytes_recived, por si hay '\0' intermedios
+    aux.append(msg, bytes_recived);
     _clients[fd]->setBufferMsgClient(aux);
 
     std::string& buffer = _clients[fd]->getBufferMsgClient();
     std::size_t pos;
 
-    // Mientras haya un mensaje completo (terminado en "\r\n")
     while ((pos = buffer.find("\n")) != std::string::npos)
     {
-        std::string fullMsg = buffer.substr(0, pos); // ya no esta \r\n
-        buffer.erase(0, pos + 1); // Eliminar mensaje + "\r\n" para seguir el bucle
+        std::string fullMsg = buffer.substr(0, pos);
+        buffer.erase(0, pos + 1);
 
-        std::cout << YELLOW << "REAL MSG: " << fullMsg << CLEAR << std::endl;
+		/* NOTE: */
+        std::cout << YELLOW << "MSG: " << fullMsg << CLEAR << std::endl;
 
-        t_msg parsedMsg = parseMsg(fullMsg); // Parsear el mensaje
+        t_msg parsedMsg = parseMsg(fullMsg);
 		handleCommand(parsedMsg, fd);
     }
 }
@@ -271,11 +248,12 @@ void Server::disconnectClient(int fd) {
 		throw std::runtime_error("Error: trying to disconnect a client that does not exist");
 	
 	Client *client = _clients[fd];
-	// TODO: Creo que hay que cambiar esto por el comando QUIT
 	for (std::map<std::string, Channel *>::iterator it = _channel.begin(); it != _channel.end(); ++it) {
 		if (_channel[it->first]->hasUser(client->getFd()))
 			_channel[it->first]->broadcastMessage(fd, "QUIT", _clients[fd]->getNickname(), "Disconnecting client");
 		_channel[it->first]->disconnectUser(client);
+		if (_channel[it->first]->getUserCount() == 1 && _channel[it->first]->hasUser("Bot"))
+			_channel[it->first]->disconnectUser(_clients[_channel[it->first]->getUserFd("Bot")]);
 	}
 	if (epoll_ctl(_epollFd, EPOLL_CTL_DEL, fd, NULL) < 0)
 		throw std::runtime_error("Error: when removing client from epoll instance");
@@ -283,6 +261,13 @@ void Server::disconnectClient(int fd) {
 		throw std::runtime_error("Error: when closing client socket");
 	delete client;
 	_clients.erase(fd);
+	for (std::map<std::string, Channel *>::iterator it = _channel.begin(); it != _channel.end(); ++it) {
+		if (_channel[it->first]->getUserCount() == 0) {
+			delete _channel[it->first];
+			_channel.erase(it);
+		}
+	}
+	/* NOTE: */
 	std::cout << GREEN << "Client disconnected successfully." << CLEAR << std::endl;
 }
 

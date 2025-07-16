@@ -1,9 +1,7 @@
 # pragma once
 
-// # include <irc.hpp>
-// # include <Server.hpp>
-// # include <Client.hpp>
-// # include <Channel.hpp>
+#ifndef BOT_HPP
+# define BOT_HPP
 
 # include <iostream>
 # include <iomanip>
@@ -51,7 +49,8 @@ typedef struct	s_msg
 
 class Bot {
 	private:
-		typedef void (Bot::*FCmd)(t_msg &, int);
+		typedef void (Bot::*FCmd)(t_msg &);
+		typedef std::string (Bot::*botCmd)(std::vector<std::string> &);
 
 		int			_fd;
 		bool		_running;
@@ -62,29 +61,30 @@ class Bot {
 		std::string	_bufferMsg;
 		std::string	_serverIp;
 		int			_serverPort;
+
 		std::map<std::string, FCmd> _cmds;
+		std::map<std::string, botCmd> _botCmds;
 
 		void connectToServer();
 		void sendCredentials();
 		void initCmds();
-		void readMsg(int fd);
-		void handleCommand(t_msg &msg, int fd);
-		//void sendMsg(const std::string &msg);
+		void initBotCmds();
+		void readMsg();
+		void sendMsg(std::string &to, const std::string &msg);
+		void handleCommand(t_msg &msg);
 		t_msg parseMsg(std::string fullMsg);
 
-		void CmCAP(t_msg& msg, int fd);
-		void CmInvite(t_msg &msg, int fd);
-		void CmJoin(t_msg &msg, int fd);
-		void CmKick(t_msg &msg, int fd);
-		void CmList(t_msg &msg, int fd);
-		void CmMode(t_msg &msg, int fd);
-		void CmNames(t_msg &msg, int fd);
-		void CmNick(t_msg &msg, int fd);
-		void CmPart(t_msg &msg, int fd);
-		void CmPass(t_msg &msg, int fd);
-		void CmPrivMsg(t_msg &msg, int fd);
-		void CmTopic(t_msg &msg, int fd);
-		void CmUser(t_msg &msg, int fd);
+		void CmInvite(t_msg &msg);
+		void CmPrivMsg(t_msg &msg);
+		void CmJoin(t_msg &msg);
+
+		std::string helpMsg(std::vector<std::string> &words);
+		std::string enlightenMe(std::vector<std::string> &words);
+		std::string rollDice(std::vector<std::string> &words);
+		std::string playRPS(std::vector<std::string> &words);
+		std::string oddEven(std::vector<std::string> &words);
+		std::string magic8Ball(std::vector<std::string> &words);
+		std::string saySomething(std::vector<std::string> &words);
 
 	public:
 		Bot(const std::string &ip, const int &port, const std::string &password);
@@ -93,6 +93,41 @@ class Bot {
 		void start();
 		// void connectToServer();
 };
+
+template<typename T>
+static int stoi( const T & s ) {
+    int i;
+    std::istringstream(s) >> i;
+    return i;
+}
+
+template<typename T>
+std::string to_string(const T &value) {
+    std::ostringstream oss;
+    oss << value;
+    return oss.str();
+}
+
+template<typename T>
+void splitCmd(const std::string &cmd, T &result, const char del) {
+	size_t start = 0;
+	size_t comma;
+	while ((comma = cmd.find(del, start)) != std::string::npos) {
+		if (comma > start) {
+			std::string token = cmd.substr(start, comma - start);
+			if (!token.empty())
+				result.push_back(token);
+		}
+		start = comma + 1;
+	}
+	if (start < cmd.size()) {
+		std::string token = cmd.substr(start);
+		if (!token.empty())
+			result.push_back(token);
+	}
+}
+
+#endif
 
 template<typename T>
 void splitCmd(const std::string &cmd, T &result, const char del) {

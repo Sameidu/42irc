@@ -39,10 +39,10 @@ class Client
 		const std::string &getNickname() const;
 		const std::string &getRealname() const;
 		const RegistrationStatus &getRegistrationState() const;
+		const std::string GetIp() const;
 		int getFd() const;
 		std::string &getBufferMsgClient();
 		std::vector<Channel*>& getChannels();
-		const std::string GetIp() const;
 
 		// Setters
 		void setUsername(const std::string &username);

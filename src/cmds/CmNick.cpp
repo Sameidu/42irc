@@ -17,7 +17,7 @@ void Server::CmNick(t_msg& msg, int fdClient)
 {
 	if (msg.params.empty() && msg.trailing.size() == 0)
 	{
-		answerClient(fdClient, ERR_NONICKNAMEGIVEN, "", "No nickname given"); // ok, no manda nada
+		answerClient(fdClient, ERR_NONICKNAMEGIVEN, "", "No nickname given");
 		return ;
 	}
 	else if (msg.params.empty() && msg.trailing.size() != 0)
@@ -25,13 +25,13 @@ void Server::CmNick(t_msg& msg, int fdClient)
 
 	if (msg.params[0].size() > NICKLEN)
 	{
-		answerClient(fdClient, ERR_ERRONEUSNICKNAME, "", "Erroneus nickname"); // ok
+		answerClient(fdClient, ERR_ERRONEUSNICKNAME, "", "Erroneus nickname");
 		return ;
 	}
 
 	if (!isSpecial(msg.params[0][0]) && !isalpha(msg.params[0][0]))
 	{
-		answerClient(fdClient, ERR_ERRONEUSNICKNAME, "", "Erroneus nickname");	// ok
+		answerClient(fdClient, ERR_ERRONEUSNICKNAME, "", "Erroneus nickname");
 		return ;
 	}
 
@@ -40,7 +40,7 @@ void Server::CmNick(t_msg& msg, int fdClient)
 		char c = msg.params[0][i];
 		if (!isalpha(c) && !isSpecial(c) && !isdigit(c) && c != '-')
 		{
-			answerClient(fdClient, ERR_ERRONEUSNICKNAME, "", "Erroneus nickname");	// ok
+			answerClient(fdClient, ERR_ERRONEUSNICKNAME, "", "Erroneus nickname");
 			return ;
 		}
 	}
@@ -52,7 +52,7 @@ void Server::CmNick(t_msg& msg, int fdClient)
 			continue ;
 		else if (it->second->getNickname() == msg.params[0])
 		{
-			answerClient(fdClient, ERR_NICKNAMEINUSE, "", "Nickname is already in use"); // ok
+			answerClient(fdClient, ERR_NICKNAMEINUSE, "", "Nickname is already in use");
 			return ;
 		}
 	}

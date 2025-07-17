@@ -6,7 +6,13 @@ Bot::Bot(const std::string &ip, const int &port, const std::string &password)
 			_serverIp = "127.0.0.1";
 	}
 
-Bot::~Bot() {}
+Bot::~Bot() {
+	if (_fd != -1) {
+		close(_fd);
+		std::cout << "Bot socket closed." << std::endl;
+	}
+	std::cout << "Bot destroyed." << std::endl;
+}
 
 void Bot::start() {
 	connectToServer();
@@ -186,8 +192,8 @@ t_msg	Bot::parseMsg(std::string fullMsg)
 	return msg;
 }
 
-void Bot::sendMsg(std::string &to, const std::string &msg) {
-	std::string fullMsg = "PRIVMSG " + to + " :" + msg + "\r\n";
+void Bot::sendMsg(const std::string &type, std::string &to, const std::string &msg) {
+	std::string fullMsg = type + " " + to + " :" + msg + "\r\n";
 	if (send(_fd, fullMsg.c_str(), fullMsg.size(), MSG_EOR) < 0) {
 		std::cerr << "Error sending message to " << to << std::endl;
 		return ;

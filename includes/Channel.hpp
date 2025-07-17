@@ -18,7 +18,6 @@ class Channel
 		std::string				_topic;
 		int						_ownerFd;
 		
-		// TODO: Pensar si añadir modo canal oculto
 		std::set<char>			_mode;
 		std::map<int, Client *>	_banned;
 		std::map<int, Client *>	_invited;
@@ -64,7 +63,7 @@ class Channel
 		void newChannelUser(Client *client);
 		void disconnectUser(Client *client);
 		void broadcastMessage(int fd, const std::string &cmd, const std::string &user, const std::string &msg) const;
-		void broadcastMessageNochan(int fd, const std::string &cmd, const std::string &msg) const; // TODO: no se si es el mejor nombre de funcion
+		void broadcastMessageNochan(int fd, const std::string &cmd, const std::string &msg) const;
 };
 
 #endif 

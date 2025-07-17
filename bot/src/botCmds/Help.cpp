@@ -14,7 +14,7 @@ std::string Bot::helpMsg(std::vector<std::string> &words) {
 		"!counter - Increment a counter <!counter>"
 	};
 	for (int i = 0; i < 10; ++i) {
-		sendMsg(words[0], help[i]);
+		sendMsg("PRIVMSG", words[0], help[i]);
 	}
 
 	std::string response = "Sending help message to user DM";

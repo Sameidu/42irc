@@ -3,14 +3,6 @@
 
 // TOPIC <channel> [<topic>]
 void Server::CmTopic(t_msg &msg, int fd) {
-	// Modificar el valor solo lo pueden hacer los admins si esta activo modo 't'
-	/* 1.- Comprobar que los parametros sean como mucho 2
-	 * 2.- Comprobar que el canal al que se quiere establecer el topic exista
-	 * 3.- Comprobar que el cliente que establece el topic sea admin del canal
-	 * 4.- Si no es admin, enviar error de no tener permisos
-	 * 5.- Si es admin, establecer el topic y enviar mensaje a todos los usuarios del canal
-	 * 6.- Si no se especifica topic, enviar el actual topic del canal
-	 */
 	if (msg.params.size() < 1 || msg.params.size() > 2) {
 		answerClient(fd, ERR_NEEDMOREPARAMS, "TOPIC", "Not enough parameters");
 		return ;

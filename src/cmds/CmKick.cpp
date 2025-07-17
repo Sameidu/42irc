@@ -2,13 +2,6 @@
 
 // KICK <channel> <user> *( "," <user> ) [<comment>]
 void Server::CmKick(t_msg &msg, int fd) {
-	// Esto solo lo pueden hacer los admins si lo intenta un usuario normal dar error
-	/* 1.- Comprobar que los parametros sean como mucho 2 + trailing (canal, usuario, razon opcional)
-	 * 2.- Comprobar que el canal del que se quiere expulsar exista
-	 * 3.- Comprobar que el cliente que quiere expulsar a otro se encuentre en el canal
-	 * 4.- Comprobar que el cliente que quiere expulsar es admin del canal
-	 * 5.- Comprobar que el cliente que se quiere expulsar se encuentre en el canal
-	 */
 	if (msg.params.size() < 1 || msg.params.size() > 2) {
 		answerClient(fd, ERR_NEEDMOREPARAMS, "KICK", "Not enough parameters");
 		return ;

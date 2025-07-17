@@ -1,27 +1,7 @@
 #include <Server.hpp>
 
 // MODE <channel/user> [<mode> [<mode params>]]
-// Con hexchat si no se especifica canal añade automiaticamente el canal en el eque se encuentra al momento de ejecutarse
-// Para cambiar modos de usuario se necesita especificar a cual como primer parámetro
-// El simbolo + indica que se añade un modo, el símbolo - indica que se quita un modo
-// En caso de que el modo que se quiera activar necesite parámetros deben ir separados por espacios
-// La gestion de modos puede ir como un unico string o como varios parámetros separados por espacios
-// Ejemplo: MODE #general +k -l pass
-// Ejemplo: MODE #general +k pass +l 10
-// Ejemplo: MODE #general +kl pass 10
-// Ejemplo: MODE #general +kl-it pass 10
-// Ejemplo: MODE #general +kl-it+o-o pass 10 user1 user2
-
 void Server::CmMode(t_msg &msg, int fd) {
-	// Esto solo lo pueden hacer los admins si lo intenta un usuario normal dar error
-	/* 1.- Si no envía más de 1 parámetro, enviar modos actuales del canal
-	 * 2.- Comprobar que el canal al que se quiere establecer el modo exista
-	 * 3.- Comprobar que el cliente que establece el modo sea admin del canal
-	 * 4.- Separar los modos y sus parámetros (MODE <channel> +kl-it <pass> <maxusers>)
-	 * 5.- Si no es admin, enviar error de no tener permisos
-	 * 6.- Si es admin, establecer el modo y enviar mensaje a todos los usuarios del canal
-	 * 7.- Si no se especifica modo, enviar el actual modo del canal
-	 */
 	if (msg.params.size() < 1 || (msg.params.size() == 1 && msg.params[0].size() <= 1)) {
 		answerClient(fd, ERR_NEEDMOREPARAMS, "MODE", "Not enough parameters");
 		return ;
@@ -38,13 +18,11 @@ void Server::CmMode(t_msg &msg, int fd) {
 			return ;
 		}
 		else {
-			// TODO: Pensar si vamos a permitir modos de usuario
 			if (_clients[fd]->getNickname() != msg.params[0]) {
 				answerClient(fd, ERR_USERSDONTMATCH, "", "Cannot change modes of other users");
 				return ;
 			}
-			// std::string modes = _clients[user]->getModes();
-			answerClient(fd, RPL_UMODEIS, _clients[fd]->getNickname(), "modes");
+			// answerClient(fd, RPL_UMODEIS, _clients[fd]->getNickname(), "modes");
 			return ;
 		}
 	}
@@ -141,7 +119,6 @@ void Server::CmMode(t_msg &msg, int fd) {
 	}
 
 	for (size_t i = 0; i < modes.size(); ++i) {
-		std::cout << "Setting mode: " << modes[i] << std::endl;
 		if (modes[i][0] == '+')
 			manageAddMode(modes[i][1], msg.params[0], params, fd);
 		else if (modes[i][0] == '-')

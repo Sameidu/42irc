@@ -19,7 +19,6 @@ typedef struct	s_msg
 	bool						hasTrailing;
 }  t_msg;
 
-
 class Server
 {
 	private:
@@ -34,7 +33,7 @@ class Server
 		sockaddr_in							_servAddr;
 		int									_epollFd;
 		std::map <std::string, FCmd>		_fCommands;
-		int 								_maxChannelUsers;
+		size_t 								_maxChannelUsers;
 		std::string 						_serverName;
 		std::string							_version;
 		std::string							_creationDate;
@@ -47,7 +46,6 @@ class Server
 		void	manageServerInput();
 		void	handleCommand(t_msg& msg, int fd);
 		void	answerClient(int fdClient, int code, const std::string &target, const std::string& msg);
-		void	answerClient(int fdClient, int code, char &target, const std::string& msg);
 		void	initCmds();
 		void	sendMsgToClient(int fd, const std::string &cmd, const std::string &channel, const std::string &msg);
 		void	msgClientToClient(int from, int to, const std::string &cmd, const std::string &msg);
@@ -75,7 +73,7 @@ class Server
 		void CmNames(t_msg &msg, int fd);
 		void CmWho(t_msg& msg, int fd);
 		void CmQuit(t_msg& msg, int fd);
-
+		void CmNotice(t_msg &msg, int fd);
 
 	public:
 
@@ -88,12 +86,18 @@ class Server
 
 		void 	run();
 		void 	init();
-		void	createUserForClient(std::string args, std::string command, int fdClient);
 };
 
 bool	setNonBlocking(int fd);
 bool	isSpecial(char c);
 std::string currentDateTimeString();
+
+template<typename T>
+static size_t stringtoint( const T & s ) {
+    size_t i;
+    std::istringstream(s) >> i;
+    return i;
+}
 
 template<typename T>
 std::string to_string(const T &value) {

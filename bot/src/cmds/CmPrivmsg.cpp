@@ -27,20 +27,22 @@ void Bot::CmPrivMsg(t_msg &msg)
 			std::string response = (this->*(it->second))(words);
 			if (cmd == "!say") 
 				target = msg.from;
-			if (!response.empty() && cmd != "!help")
-				sendMsg(target, response);
+			if (!response.empty() && cmd != "!help" && (target[0] == '#' || target[0] == '&'))
+				sendMsg("NOTICE", target, response);
+			else if (!response.empty() && cmd != "!help")
+				sendMsg("PRIVMSG", target, response);
 		}
 		else
-			sendMsg(target, "Command not recognized, please type !<command>");
+			sendMsg("NOTICE", target, "Command not recognized, please type !<command>");
 		return ;
 	}
 	
 	if (msg.params[0] == "Bot")
-		sendMsg(target, "Command not recognized, please type !<command>");
+		sendMsg("PRIVMSG", target, "Command not recognized, please type !<command>");
 	else {
 			for (std::vector<std::string>::iterator it = words.begin(); it != words.end(); ++it) {
 				if (*it == "!help") {
-					sendMsg(msg.params[0], "For usage information, type '!help' or '!<command>'");
+					sendMsg("NOTICE", msg.params[0], "For usage information, type '!help' or '!<command>'");
 					 return ;
 				}
 			}

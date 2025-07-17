@@ -2,16 +2,11 @@
 
 // NAMES <channel>{,<channel>}
 void Server::CmNames(t_msg &msg, int fd) {
-	/* 1.- Comprobar que los parametros sean como mucho 1
-	 * 2.- Si no se especifica canal, enviar la lista de todos los canales y sus usuarios
-	 * 3.- Si se especifica canal, comprobar que exista y enviar la lista de usuarios del canal
-	 */
 	if (msg.params.size() > 1) {
 		answerClient(fd, ERR_NEEDMOREPARAMS, "NAMES", "Not enough parameters");
 		return ;
 	}
 	if (msg.params.empty()) {
-		// Enviar la lista de todos los canales y sus usuarios
 		for (std::map<std::string, Channel *>::iterator it = _channel.begin(); it != _channel.end(); ++it) {
 			std::string target;
 			if (it->second->hasMode('s') || it->second->hasMode('p')) {

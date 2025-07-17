@@ -47,7 +47,7 @@ void Server::init() {
 		throw std::runtime_error("When setting SO_REUSEADDR");
 
 	if (!setNonBlocking(_socketFd))
-		throw std::runtime_error("Error: setting flags to non blocking");
+		throw std::runtime_error("Setting flags to non blocking");
 
 	std::memset(&_servAddr, 0, sizeof(_servAddr));
 	_servAddr.sin_family = AF_INET; 
@@ -182,8 +182,7 @@ t_msg	Server::parseMsg(std::string fullMsg)
 		else
 			args.clear();
 	}
-	/* If there is no trailing, the protocol supports 14 parameters. 
-		If there are more, I ignore them and lose them. */
+
 	if (trailingPos == std::string::npos && !args.empty() && msg.params.size() < MAX_PARAMS + 1)
 	{
 		size_t pos = args.find(' ');
@@ -238,8 +237,6 @@ void Server::disconnectClient(int fd) {
 	
 	Client *client = _clients[fd];
 	for (std::map<std::string, Channel *>::iterator it = _channel.begin(); it != _channel.end(); ++it) {
-		/*if (_channel[it->first]->hasUser(client->getFd()))
-			_channel[it->first]->broadcastMessage(fd, "QUIT", _clients[fd]->getNickname(), "Disconnecting client");*/
 		_channel[it->first]->disconnectUser(client);
 		if (_channel[it->first]->getUserCount() == 1 && _channel[it->first]->hasUser("Bot"))
 			_channel[it->first]->disconnectUser(_clients[_channel[it->first]->getUserFd("Bot")]);
@@ -265,23 +262,24 @@ void  Server::manageServerInput() {
 	std::getline(std::cin, input);
 	if (input.empty())
 		return ;
-	if (input == "exit" || input == "quit") {
+	std::vector<std::string> commands;
+	splitCmd(input, commands, ' ');
+	if (commands[0] == "exit" || commands[0] == "quit") {
 		_running = false;
 		/* NOTE: */
 		std::cout << PINK << "Server is shutting down..." << CLEAR << std::endl;
 	}
-	else if (input == "clients") {
+	else if (commands[0] == "clients") {
 		// TODO: Darle una vuelta a la información facilitada
 		std::cout << "Connected clients: " << std::endl;
 		for (std::map<int, Client *>::iterator it = _clients.begin(); it != _clients.end(); ++it) {
 			std::cout << "[ Client fd: " << it->first
 					  << ", Username: " << it->second->getUsername() 
-					  << ", Nickname: " << it->second->getNickname() 
-					  << ", Realname: " << it->second->getRealname() << " ]"
-					  << std::endl;
+					  << ", Nickname: " << it->second->getNickname()
+					  << " ]" << std::endl;
 		}
 	}
-	else if (input == "channels") {
+	else if (commands[0] == "channels") {
 		// TODO: Darle una vuelta a la información facilitada
 		std::cout << "Available channels: " << std::endl;
 		for (std::map<std::string, Channel *>::iterator it = _channel.begin(); it != _channel.end(); ++it) {
@@ -291,22 +289,21 @@ void  Server::manageServerInput() {
 					  << std::endl;
 		}
 	}
-	else if (input == "clear" || input == "cls")
-		std::cout << "\033[2J\033[1;1H"; // Clear the console
-	else if (input == "limit") {
-		// Este va a ser solo para ver el limite actual
-		// TODO: Crear setLimit para modificar el valor (Actualizar a todos los usuarios conectados)
+	else if (commands[0] == "clear" || commands[0] == "cls")
+		std::cout << "\033[2J\033[1;1H";
+	else if (commands[0] == "limit") {
+		if (commands.size() > 1) {
+			int number = stringtoint(commands[1]);
+			if (number < 1 || number > 100)
+				std::cout << RED << "Please choose a number between 1 and 100" << CLEAR << std::endl;
+			else
+				_maxChannelUsers = number;
+		}
 		std::cout << "Max channels per user: " << _maxChannelUsers << std::endl;
 	}
-	else if (input == "version") {
+	else if (commands[0] == "version")
 		std::cout << "Server version: 1.0.0" << std::endl;
-	}
-	else if (input == "add_admin") {
-		// Este y el siguiente no se si los veo necesarios
-	}
-	else if (input == "del_admin") {
-	}
-	else if (input == "help") {
+	else if (commands[0] == "help") {
 		std::cout << "Available commands:" << std::endl;
 		std::cout << "- exit/quit: Stop the server." << std::endl;
 		std::cout << "- clients: List connected clients." << std::endl;
@@ -314,13 +311,10 @@ void  Server::manageServerInput() {
 		std::cout << "- clear/cls: Clear the console." << std::endl;
 		std::cout << "- limit: Show max channels per user." << std::endl;
 		std::cout << "- version: Show server version." << std::endl;
-		std::cout << "- add_admin: Add an admin to a channel." << std::endl;
-		std::cout << "- del_admin: Remove an admin from a channel." << std::endl;
 		std::cout << "- help: Show this help message." << std::endl;
 	}
-	else {
+	else
 		std::cout << RED << "Command not recognized. Type 'help' for a list of commands." << CLEAR << std::endl;
-	}
 }
 
 void Server::run() {
@@ -350,7 +344,6 @@ void Server::run() {
 						readMsg(fd);
 					if (events[i].events & (EPOLLRDHUP | EPOLLHUP | EPOLLERR))
 						disconnectClient(fd);
-					// TODO: gestionar el resto de eventos
 				}
 			}
 		}

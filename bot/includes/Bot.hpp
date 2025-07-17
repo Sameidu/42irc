@@ -72,7 +72,7 @@ class Bot {
 		void initCmds();
 		void initBotCmds();
 		void readMsg();
-		void sendMsg(std::string &to, const std::string &msg);
+		void sendMsg(const std::string &type, std::string &to, const std::string &msg);
 		void handleCommand(t_msg &msg);
 		t_msg parseMsg(std::string fullMsg);
 
@@ -96,8 +96,8 @@ class Bot {
 };
 
 template<typename T>
-static int stoi( const T & s ) {
-    int i;
+static size_t stringtoint( const T & s ) {
+    size_t i;
     std::istringstream(s) >> i;
     return i;
 }
@@ -129,14 +129,3 @@ void splitCmd(const std::string &cmd, T &result, const char del) {
 }
 
 #endif
-
-template<typename T>
-void splitCmd(const std::string &cmd, T &result, const char del) {
-	size_t start = 0;
-	size_t comma;
-	while ((comma = cmd.find(del, start)) != std::string::npos) {
-		result.push_back(cmd.substr(start, comma - start));
-		start = comma + 1;
-	}
-	result.push_back(cmd.substr(start));
-}

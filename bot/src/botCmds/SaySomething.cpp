@@ -17,7 +17,9 @@ std::string Bot::saySomething(std::vector<std::string> &words) {
 			message += " ";
 		message += *it;
 	}
-	
-	sendMsg(dest, message);
+	if (dest[0] == '#' || dest[0] == '&')
+		sendMsg("NOTICE", dest, message);
+	else
+		sendMsg("PRIVMSG", dest, message);
 	return ("Message sent to " + dest + ": " + message);
 }

@@ -2,15 +2,6 @@
 
 // INVITE <nickname> <channel>
 void Server::CmInvite(t_msg &msg, int fd) {
-	// Esto solo lo pueden hacer los admins si lo intenta un usuario normal dar error
-	/* 1.- Comprobar que los parametros sean 2
-	 * 2.- Comprobar que el cliente al que se invita exista
-	 * 3.- Comprobar que el canal al que se invita exista
-	 * 4.- Comprobar que el cliente que invita no esté en el canal ni en la lista de invitados
-	 * 5.- Comprobar que quien invita sea admin del canal si esta activo el modo invite-only
-	 * 6.- Añadir al cliente invitado a la lista de invitados del canal
-	 * 7.- Enviar mensaje al cliente invitado de que ha sido invitado al canal
-	 */
 	if (msg.params.size() != 2) {
 		answerClient(fd, ERR_NEEDMOREPARAMS, "INVITE", "Not enough parameters");
 		return ;

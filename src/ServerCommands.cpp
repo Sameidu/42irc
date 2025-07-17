@@ -20,6 +20,7 @@ void	Server::initCmds()
 	_fCommands.insert(std::pair<std::string, FCmd>("PRIVMSG", &Server::CmPrivMsg));
 	_fCommands.insert(std::pair<std::string, FCmd>("WHO", &Server::CmWho));
 	_fCommands.insert(std::pair<std::string, FCmd>("QUIT", &Server::CmQuit));
+	_fCommands.insert(std::pair<std::string, FCmd>("NOTICE", &Server::CmNotice));
 }
 
 std::string Server::makePrefix(int fd) {

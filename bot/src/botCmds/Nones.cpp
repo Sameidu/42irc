@@ -4,7 +4,7 @@ std::string Bot::oddEven(std::vector<std::string> &words) {
 	if (words.size() != 3) 
 		return ("Usage: !nones <choice> <number>\r\n");
 	
-	int number = stoi(words[2]);
+	int number = stringtoint(words[2]);
 	if (number < 0 || number > 100)
 		return ("Please choose a number between 0 and 100");
 	if (words[1] != "odd" && words[1] != "even")

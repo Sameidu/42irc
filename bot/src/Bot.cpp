@@ -4,14 +4,11 @@ Bot::Bot(const std::string &ip, const int &port, const std::string &password)
 	: _fd(-1), _running(true), _password(password), _nick("Bot"), _user("Bot"), _name("Bot"), _serverIp(ip), _serverPort(port) {
 		if (ip == "localhost")
 			_serverIp = "127.0.0.1";
-	}
+}
 
 Bot::~Bot() {
-	if (_fd != -1) {
+	if (_fd != -1)
 		close(_fd);
-		std::cout << "Bot socket closed." << std::endl;
-	}
-	std::cout << "Bot destroyed." << std::endl;
 }
 
 void Bot::start() {
@@ -43,16 +40,15 @@ void Bot::initCmds() {
 void Bot::connectToServer() {
 	_fd = socket(AF_INET, SOCK_STREAM, 0);
 	if (_fd < 0) 
-		throw std::runtime_error("Error: creating the socket for the bot");
-	std::cout << "Bot socket created with fd -> " << _fd << std::endl;
+		throw std::runtime_error("Creating the socket for the bot");
 	sckt = _fd;
 
 	int opt = 1;
 	if (setsockopt(_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0)
-		throw std::runtime_error("Error: when setting SO_REUSEADDR");
+		throw std::runtime_error("When setting SO_REUSEADDR");
 	
 	if (fcntl(_fd, F_SETFL, O_NONBLOCK) < 0)
-		throw std::runtime_error("Error: setting flags to non blocking for bot socket");
+		throw std::runtime_error("Setting flags to non blocking for bot socket");
 
 	sockaddr_in serv;
 	std::memset(&serv, 0, sizeof(serv));
@@ -61,10 +57,28 @@ void Bot::connectToServer() {
 	serv.sin_port = htons(_serverPort);
 
 	if (connect(_fd, (sockaddr*)&serv, sizeof(serv)) < 0) {
-		if (errno == EINPROGRESS)
-			std::cout << "Connection in progress..." << std::endl;
-		else
-			throw std::runtime_error("Error: connecting to the server");
+		if (errno == EINPROGRESS) {
+			fd_set wfds;
+			FD_ZERO(&wfds);
+			FD_SET(_fd, &wfds);
+
+			struct timeval tv;
+			tv.tv_sec = 5;
+			tv.tv_usec = 0;
+
+			int sel = select(_fd + 1, NULL, &wfds, NULL, &tv);
+			if (sel <= 0)
+				throw std::runtime_error("Timeout or error while waiting for connect");
+
+			int sockerr;
+			socklen_t len = sizeof(sockerr);
+			if (getsockopt(_fd, SOL_SOCKET, SO_ERROR, &sockerr, &len) < 0 || sockerr != 0)
+				throw std::runtime_error("Connection failed after select: " + std::string(strerror(sockerr)));
+
+			std::cout << "Connection established!" << std::endl;
+		}
+		else 
+			throw std::runtime_error("Connecting to the server");
 	}
 }
 
@@ -74,11 +88,11 @@ void Bot::sendCredentials() {
 	std::string userCmd = "USER " + _user + " 0 * :" + _name + "\r\n";
 
 	if (send(_fd, passCmd.c_str(), passCmd.size(), 0) < 0)
-		throw std::runtime_error("Error: sending PASS command");
+		throw std::runtime_error("Sending PASS command");
 	if (send(_fd, nickCmd.c_str(), nickCmd.size(), 0) < 0)
-		throw std::runtime_error("Error: sending NICK command");
+		throw std::runtime_error("Sending NICK command");
 	if (send(_fd, userCmd.c_str(), userCmd.size(), 0) < 0)
-		throw std::runtime_error("Error: sending USER command");
+		throw std::runtime_error("Sending USER command");
 }
 
 void Bot::readMsg() {
@@ -91,7 +105,7 @@ void Bot::readMsg() {
 		if (errno == EAGAIN || errno == EWOULDBLOCK)
 			return;
 		else
-			throw std::runtime_error("Error: receiving data from server");
+			throw std::runtime_error("Receiving data from server");
 	}
 	else if (bytesReceived == 0) {
 		std::cout << "Server closed the connection." << std::endl;

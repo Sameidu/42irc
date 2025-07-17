@@ -61,7 +61,7 @@ class Bot {
 		std::string	_user;
 		std::string	_name;
 		std::string	_bufferMsg;
-		std::string	_serverIp;
+		std::string _serverIp;
 		int			_serverPort;
 
 		std::map<std::string, FCmd> _cmds;

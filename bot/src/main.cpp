@@ -14,7 +14,7 @@ void	runSignals() {
 	signal(SIGQUIT, handleSignal);
 	signal(SIGTSTP, handleSignal);
 	signal(SIGTERM, handleSignal);
-	signal(SIGTSTP, SIG_IGN);
+	// signal(SIGTSTP, SIG_IGN);
 	signal(SIGPIPE, SIG_IGN);
 }
 
@@ -51,7 +51,7 @@ int main(int argc, char **argv) {
 		runSignals();
 		bot.start();
 	} catch (const std::exception &e) {
-		std::cerr << "Error: " << e.what() << std::endl;
+		std::cerr << RED << "Error: " << CLEAR << e.what() << std::endl;
 		return 1;
 	}
 	return 0;

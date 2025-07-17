@@ -8,10 +8,9 @@ void Server::CmQuit(t_msg& msg, int fdClient)
     else
         reason = "Quit: ";
 
-    std::string response = makePrefix(fdClient) + reason + "\r\n";
-    std::cout << GREEN << response << CLEAR << std::endl;
+    std::string response = makePrefix(fdClient) + " " + reason + "\r\n";
     if (send(fdClient, response.c_str(), response.size(), MSG_EOR) < 0)
-		throw std::runtime_error("Error: sending msg to client");
+		throw std::runtime_error("Sending msg to client");
 
 	std::vector<Channel*>& channels = _clients[fdClient]->getChannels();
 

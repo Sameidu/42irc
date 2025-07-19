@@ -22,7 +22,7 @@ El ejecutable se generará con el nombre ircserv
 - make test PORT=1234 PASS=hola123  → ejecuta ./ircserv 1234 hola123
 - Si usas esta regla tienes que cambiar una funcion del main para que no pete
 - Cambiar runSignals(), por este:
-
+```text
 void	runSignals() {
 	signal(SIGINT, handleSignal);
 	signal(SIGQUIT, handleSignal);
@@ -31,6 +31,7 @@ void	runSignals() {
 	signal(SIGTSTP, SIG_IGN);
 	signal(SIGPIPE, SIG_IGN);
 }
+```
 
 ## Ejecución
 
@@ -39,11 +40,14 @@ void	runSignals() {
 ## Comandos implementados
 
 ### Verificacion del usuario
+```text
 - PASS <Password>
 - NICK <Nickname>
 - USER <Username> 0 * :<Realname>
+```
 
 ### Comandos de canal
+```text
 - INVITE <nickname> <channel>
 - JOIN <channel>{,<channel>} [<key>{,<key>}]
 - KICk <channel> <user> *( "," <user> ) [<comment>]
@@ -52,24 +56,31 @@ void	runSignals() {
 - TOPIC <channel> [<topic>]
 - NAMES <channel>{,<channel>}
 - LIST [<channel>{,<channel>}] [<elistcond>{,<elistcond>}]
+```
 
 ### Comandos de envio de mensajes
+```text
 - NOTICE <target>{,<target>} <text to be sent>
 - PRIVMSG <target>{,<target>} <text to be sent>
+```
 
 ### Comando desconexion del server
+```text
 - QUIT <reason>
+```
 
 ### Comandos no implementados pero reconocidos
+```text
 - CAP <subcommand> [:<capabilities>]
 - WHO <mask>
+```
 
 ## Cliente 
 
 - Hexchat
 
 ### Conectarte a tu servidor con hexchat
-
+```text
 - Instala Hexchat en tu ordenador
 - Escribe hexchat en la terminal, o abre hexchat a traves del acceso directo
 - Configurar , nickname, username, password, puerto y ip del server.
@@ -80,6 +91,7 @@ void	runSignals() {
 - USER <Username> 0 * :<Realname>
 - Si todo esta correcto , y el cliente se ha podido conectar y verificar con exito llegara un msg RPL_WELCOME, y se te unira a un canal general
 - Ya puedes usar el server IRC
+```
 
 ## Documentacion utilizada
 

@@ -196,43 +196,30 @@ void Channel::removeAdminList(Client *client) {
 // 	}
 // }
 
-void Channel::broadcastMessageNochan(int fd, const std::string &cmd, const std::string &msg) const {
-    // 1. Construimos el prefijo del emisor
+std::string Channel::broadcastMessageNochan(int fd, const std::string &cmd, const std::string &msg) const {
     std::string prefix = ":" + _users.at(fd)->getNickname() + "!" + 
                          _users.at(fd)->getUsername() + "@" + _users.at(fd)->GetIp();
     
-    // 2. Construimos el mensaje completo
     std::string message = prefix + " " + cmd;
     if (!msg.empty())
         message += " :" + msg;
     message += "\r\n";
 
-    // 3. RECORREMOS y encolamos en los buffers de los demás
-    for (std::map<int, Client *>::const_iterator it = _users.begin(); it != _users.end(); ++it) {
-        if (it->first != fd) {
-            // it->second es el puntero al objeto Client
-            it->second->addMsg(message); 
-        }
-    }
+    return message;
 }
 
-void Channel::broadcastMessage(int fd, const std::string &cmd, const std::string &user, const std::string &msg) const {
+std::string Channel::broadcastMessage(int fd, const std::string &cmd, const std::string &user, const std::string &msg) const {
     std::string prefix = ":" + _users.at(fd)->getNickname() + "!" + 
                          _users.at(fd)->getUsername() + "@" + _users.at(fd)->GetIp();
     
     std::string message = prefix + " " + cmd + " " + _name;
-    
     if (!user.empty())
-        message += " " + user;
+		message += " " + user;
     if (!msg.empty())
-        message += " :" + msg;
+		message += " :" + msg;
     message += "\r\n";
 
-    for (std::map<int, Client *>::const_iterator it = _users.begin(); it != _users.end(); ++it) {
-        if (it->first != fd) {
-            it->second->addMsg(message);
-        }
-    }
+	return message;
 }
 
 void Channel::broadcastSimple(int excludeFd, const std::string &fullMsg) const {

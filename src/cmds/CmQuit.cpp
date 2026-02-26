@@ -33,12 +33,13 @@ void Server::CmQuit(t_msg& msg, int fdClient)
     std::vector<Channel*>& channels = _clients[fdClient]->getChannels();
     for (std::vector<Channel*>::iterator it = channels.begin(); it != channels.end(); ++it)
     {
-        (*it)->broadcastMessageNochan(fdClient, "QUIT", reason);
-        const std::map<int, Client*>& users = (*it)->getUsers();
-        for (std::map<int, Client*>::const_iterator uIt = users.begin(); uIt != users.end(); ++uIt) {
-            if (uIt->first != fdClient)
-                enableWrite(uIt->first);
-        }
+        std::string message = (*it)->broadcastMessageNochan(fdClient, "QUIT", reason);
+		sendToChannel((*it)->getName(), fdClient, message);
+        // const std::map<int, Client*>& users = (*it)->getUsers();
+        // for (std::map<int, Client*>::const_iterator uIt = users.begin(); uIt != users.end(); ++uIt) {
+        //     if (uIt->first != fdClient)
+        //         enableWrite(uIt->first);
+        // }
     }
     _clients[fdClient]->setShouldDisconnect(true); 
 }

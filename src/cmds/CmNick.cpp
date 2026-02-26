@@ -9,7 +9,8 @@ void	Server::sendMsgChangeNick(std::string newNick, int fdClient)
 	for (std::vector<Channel*>::iterator it = channels.begin(); it != channels.end(); ++it)
     {
         Channel* ch = *it;
-		ch->broadcastMessageNochan(fdClient, "NICK", newNick);
+		std::string message = ch->broadcastMessageNochan(fdClient, "NICK", newNick);
+		sendToChannel(ch->getName(), fdClient, message);
 	}
 }
 

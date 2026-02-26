@@ -26,7 +26,7 @@ void	Server::initCmds()
 std::string Server::makePrefix(int fd) {
   return ":" + _clients[fd]->getNickname()
        + "!" + _clients[fd]->getUsername()
-       + _clients[fd]->GetIp();
+       + "@" + _clients[fd]->GetIp();
 }
 
 void Server::answerClient(int fdClient, int code, const std::string &target, const std::string &msg)
@@ -61,6 +61,7 @@ void Server::sendMsgToClient(int fd, const std::string &cmd, const std::string &
 	if (!msg.empty())
 		response += " :" + msg;
 	response += "\r\n";
+	_clients[fd]->addMsg(response);
 	epoll_event ev;
 	ev.events = EPOLLIN | EPOLLOUT | EPOLLRDHUP;
 	ev.data.fd = fd;
@@ -75,6 +76,7 @@ void Server::msgClientToClient(int from, int to, const std::string &cmd, const s
 	if (!msg.empty())
 		response += " :" + msg;
 	response += "\r\n";
+	_clients[to]->addMsg(response);
 	epoll_event ev;
 	ev.events = EPOLLIN | EPOLLOUT | EPOLLRDHUP;
 	ev.data.fd = to;

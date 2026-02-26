@@ -118,7 +118,7 @@ void	Server::connectNewClient()
 t_msg	Server::parseMsg(std::string fullMsg)
 {
 	/* NOTE: */
-	std::cout << "FULL MSG RECIVED:\n" << BLUE << fullMsg << CLEAR << std::endl;
+	std::cout << "FULL MSG RECIVED:" << BLUE << fullMsg << CLEAR << std::endl;
 
 	while (!fullMsg.empty() && (fullMsg[fullMsg.size() - 1] == '\r' || fullMsg[fullMsg.size() - 1] == '\n'))
     	fullMsg.resize(fullMsg.size() - 1);
@@ -396,14 +396,14 @@ void Server::run() {
 						readMsg(fd);
 					if (events[i].events & EPOLLOUT) {
 						handleWrite(fd);
+						if (_clients.find(fd) == _clients.end())
+							continue;
 						epoll_event ev;
 						ev.events = EPOLLIN | EPOLLRDHUP;
 						ev.data.fd = fd;
 						if (epoll_ctl(_epollFd, EPOLL_CTL_MOD, fd, &ev) < 0)
 							throw std::runtime_error("When modifying client to epoll instance after write");
 						_clients[fd]->setHasPendingMsg(false);
-						/* NOTE: */
-						std::cout << GREEN << "Message sent to client with fd: " << fd << CLEAR << std::endl;
 					}
 					if (events[i].events & (EPOLLRDHUP | EPOLLHUP | EPOLLERR))
 						disconnectClient(fd);

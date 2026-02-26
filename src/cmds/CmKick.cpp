@@ -35,7 +35,8 @@ void Server::CmKick(t_msg &msg, int fd) {
 			continue ;
 		std::string reason = (!msg.trailing.empty()) ? msg.trailing : _clients[fd]->getNickname() + " kicked from " + msg.params[0];
 		sendMsgToClient(fd, "KICK", msg.params[0] + " " + *it , reason);
-		_channel[msg.params[0]]->broadcastMessage(fd, "KICK", *it, reason);
+		std::string message = _channel[msg.params[0]]->broadcastMessage(fd, "KICK", *it, reason);
+		sendToChannel(msg.params[0], fd, message);
 		_channel[msg.params[0]]->disconnectUser(_clients[userFd]);
 		if (_channel[msg.params[0]]->getUserCount() == 0) {
 			delete _channel[msg.params[0]];

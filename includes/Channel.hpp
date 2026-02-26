@@ -63,8 +63,8 @@ class Channel
 		void removeAdminList(Client *client);
 		void newChannelUser(Client *client);
 		void disconnectUser(Client *client);
-		void broadcastMessage(int fd, const std::string &cmd, const std::string &user, const std::string &msg) const;
-		void broadcastMessageNochan(int fd, const std::string &cmd, const std::string &msg) const;
+		std::string broadcastMessage(int fd, const std::string &cmd, const std::string &user, const std::string &msg) const;
+		std::string broadcastMessageNochan(int fd, const std::string &cmd, const std::string &msg) const;
 		void broadcastSimple(int excludeFd, const std::string &fullMsg) const;
 };
 

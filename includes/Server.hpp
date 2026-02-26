@@ -56,6 +56,7 @@ class Server
 		void	enableWrite(int fd);
 		void	disableWrite(int fd);
 		void	sendToChannel(const std::string &chanName, int excludeFd, const std::string &msg);
+		// Client* getUser(int fd) { return _clients[fd]; }
 
 		/* COMMANDS */
 		void sendMsgChangeNick(std::string newNick, int fdClient);

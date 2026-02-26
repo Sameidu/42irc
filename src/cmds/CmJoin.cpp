@@ -86,7 +86,8 @@ void Server::CmJoin(t_msg &msg, int fd) {
 			}
 
 			_channel[channels[i]]->newChannelUser(_clients[fd]);
-			_channel[channels[i]]->broadcastMessage(fd, "JOIN", "", "");
+			std::string message = _channel[channels[i]]->broadcastMessage(fd, "JOIN", "", "");
+			sendToChannel(channels[i], fd, message);
 			sendMsgToClient(fd, "JOIN", channels[i], "");
 
 			t_msg topic;

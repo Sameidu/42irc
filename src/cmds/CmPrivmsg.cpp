@@ -39,13 +39,15 @@ void Server::CmPrivMsg(t_msg &msg, int fdClient)
                     answerClient(fdClient, ERR_NOTONCHANNEL, target, "Cannot send to channel");
                     continue ;
                 }
-                else if ( ch->isBanned(fdClient))
+                else if (ch->isBanned(fdClient))
                 {
                     answerClient(fdClient, ERR_CANNOTSENDTOCHAN, target, "Cannot send to channel");
                     continue ;
                 }
-                else 
-                    ch->broadcastMessage(fdClient, "PRIVMSG", "", msg.trailing);
+                else {
+                    std::string message = ch->broadcastMessage(fdClient, "PRIVMSG", "", msg.trailing);
+					sendToChannel(target, fdClient, message);
+				}
             }
         }
         else

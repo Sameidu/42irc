@@ -38,27 +38,27 @@ OBJ = $(patsubst %.cpp, $(OBJ_DIR)/%.o, $(SRC))
 all: $(NAME)
 
 $(NAME): $(OBJ)
-	@echo "$(PINK)✨ Linking executable...$(CLEAR)"
+	@echo -e "$(PINK)✨ Linking executable...$(CLEAR)"
 	$(CC) $(OBJ) $(CFLAGS) $(DEBUG) -o $(NAME)
-	@echo "$(GREEN)✅ Build successful!$(CLEAR)"
+	@echo -e "$(GREEN)✅ Build successful!$(CLEAR)"
 
 $(OBJ_DIR)/%.o: %.cpp | $(OBJ_DIR)
-	@echo "$(BLUE)📦 Compiling $< -> $@$(CLEAR)"
+	@echo -e "$(BLUE)📦 Compiling $< -> $@$(CLEAR)"
 	$(CC) $(CFLAGS) $(DEBUG) -c $< -o $@
-	@echo "$(GREEN)✔ Done.$(CLEAR)"
+	@echo -e "$(GREEN)✔ Done.$(CLEAR)"
 
 $(OBJ_DIR):
 	mkdir -pv $@
 
 clean:
-	@echo "$(YELLOW)🧹 Cleaning object files...$(CLEAR)"
+	@echo -e "$(YELLOW)🧹 Cleaning object files...$(CLEAR)"
 	@rm -rf $(OBJ_DIR)
-	@echo "$(GREEN)✔ Object files removed.$(CLEAR)"
+	@echo -e "$(GREEN)✔ Object files removed.$(CLEAR)"
 
 fclean: clean
-	@echo "$(YELLOW)🧽 Removing executable...$(CLEAR)"
+	@echo -e "$(YELLOW)🧽 Removing executable...$(CLEAR)"
 	@rm -rf $(NAME)
-	@echo "$(GREEN)✔ Executable removed.$(CLEAR)"
+	@echo -e "$(GREEN)✔ Executable removed.$(CLEAR)"
 
 re: fclean all
 

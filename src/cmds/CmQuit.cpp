@@ -1,23 +1,44 @@
 #include <Server.hpp>
 
+// void Server::CmQuit(t_msg& msg, int fdClient)
+// {
+//     std::string reason;
+//     if (!msg.trailing.empty())
+//         reason = "Quit: " + msg.trailing;
+//     else
+//         reason = "Quit: ";
+
+//     std::string response = makePrefix(fdClient) + " " + reason + "\r\n";
+//     if (send(fdClient, response.c_str(), response.size(), MSG_EOR) < 0)
+// 		throw std::runtime_error("Sending msg to client");
+
+// 	std::vector<Channel*>& channels = _clients[fdClient]->getChannels();
+
+// 	for (std::vector<Channel*>::iterator it = channels.begin(); it != channels.end(); ++it)
+//     {
+//         Channel* ch = *it;
+// 		ch->broadcastMessageNochan(fdClient, "QUIT", reason);
+// 	}
+//     disconnectClient(fdClient);
+// }
+
 void Server::CmQuit(t_msg& msg, int fdClient)
 {
-    std::string reason;
-    if (!msg.trailing.empty())
-        reason = "Quit: " + msg.trailing;
-    else
-        reason = "Quit: ";
+    std::string reason = msg.trailing.empty() ? "Quit: " : "Quit: " + msg.trailing;
+    std::string response = makePrefix(fdClient) + " QUIT :" + reason + "\r\n";
 
-    std::string response = makePrefix(fdClient) + " " + reason + "\r\n";
-    if (send(fdClient, response.c_str(), response.size(), MSG_EOR) < 0)
-		throw std::runtime_error("Sending msg to client");
+    _clients[fdClient]->addMsg(response);
+    enableWrite(fdClient);
 
-	std::vector<Channel*>& channels = _clients[fdClient]->getChannels();
-
-	for (std::vector<Channel*>::iterator it = channels.begin(); it != channels.end(); ++it)
+    std::vector<Channel*>& channels = _clients[fdClient]->getChannels();
+    for (std::vector<Channel*>::iterator it = channels.begin(); it != channels.end(); ++it)
     {
-        Channel* ch = *it;
-		ch->broadcastMessageNochan(fdClient, "QUIT", reason);
-	}
-    disconnectClient(fdClient);
+        (*it)->broadcastMessageNochan(fdClient, "QUIT", reason);
+        const std::map<int, Client*>& users = (*it)->getUsers();
+        for (std::map<int, Client*>::const_iterator uIt = users.begin(); uIt != users.end(); ++uIt) {
+            if (uIt->first != fdClient)
+                enableWrite(uIt->first);
+        }
+    }
+    _clients[fdClient]->setShouldDisconnect(true); 
 }

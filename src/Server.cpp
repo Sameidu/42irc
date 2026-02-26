@@ -113,12 +113,6 @@ void	Server::connectNewClient()
 	if (epoll_ctl(_epollFd, EPOLL_CTL_ADD, client_fd, &ev) < 0)
 		throw std::runtime_error("When add new client to epoll");
 	_clients.insert(std::pair<int, Client*>(client_fd, auxClient));
-
-	/* NOTE: Client Data */
-	std::cout << "Client fd connected with fd: " << client_fd << std::endl;
-	std::cout << " Client connected from: "
-	<< inet_ntoa(client_addr.sin_addr) << ":" 
-	<< ntohs(client_addr.sin_port) << std::endl;
 }
 
 t_msg	Server::parseMsg(std::string fullMsg)
@@ -257,6 +251,64 @@ void Server::disconnectClient(int fd) {
 	std::cout << GREEN << "Client disconnected successfully." << CLEAR << std::endl;
 }
 
+void Server::enableWrite(int fd) {
+    epoll_event ev;
+    ev.events = EPOLLIN | EPOLLOUT | EPOLLRDHUP;
+    ev.data.fd = fd;
+    epoll_ctl(_epollFd, EPOLL_CTL_MOD, fd, &ev);
+}
+
+void Server::disableWrite(int fd) {
+    epoll_event ev;
+    ev.events = EPOLLIN | EPOLLRDHUP;
+    ev.data.fd = fd;
+    epoll_ctl(_epollFd, EPOLL_CTL_MOD, fd, &ev);
+}
+
+void Server::handleWrite(int fd) {
+    if (_clients.find(fd) == _clients.end())
+        return;
+
+    Client *client = _clients[fd];
+    const std::string &msg = client->getNextMsg();
+	std::cout << "Attempting to send message to client fd " << fd << ": " << BLUE << msg << CLEAR;
+    if (!msg.empty()) {
+        ssize_t bytes_sent = send(fd, msg.c_str(), msg.size(), 0);
+
+        if (bytes_sent > 0) {
+            client->updateMsg(static_cast<size_t>(bytes_sent));
+            if (!client->hasPendingMsg())
+                disableWrite(fd);
+        } 
+        else if (bytes_sent < 0) {
+            if (errno != EAGAIN && errno != EWOULDBLOCK) {
+                disconnectClient(fd);
+                return;
+            }
+        }
+    } else {
+        disableWrite(fd);
+    }
+    if (!client->hasPendingMsg() && client->getShouldDisconnect()) {
+        disconnectClient(fd);
+    }
+}
+
+void Server::sendToChannel(const std::string &chanName, int excludeFd, const std::string &msg) {
+    if (_channel.find(chanName) == _channel.end())
+        return;
+
+    Channel *chan = _channel[chanName];
+    chan->broadcastSimple(excludeFd, msg);
+
+    const std::map<int, Client*>& users = chan->getUsers();
+    for (std::map<int, Client*>::const_iterator it = users.begin(); it != users.end(); ++it) {
+        if (it->first != excludeFd) {
+            enableWrite(it->first);
+        }
+    }
+}
+
 void  Server::manageServerInput() {
 	std::string input;
 	std::getline(std::cin, input);
@@ -342,6 +394,17 @@ void Server::run() {
 
 					if (events[i].events & EPOLLIN)
 						readMsg(fd);
+					if (events[i].events & EPOLLOUT) {
+						handleWrite(fd);
+						epoll_event ev;
+						ev.events = EPOLLIN | EPOLLRDHUP;
+						ev.data.fd = fd;
+						if (epoll_ctl(_epollFd, EPOLL_CTL_MOD, fd, &ev) < 0)
+							throw std::runtime_error("When modifying client to epoll instance after write");
+						_clients[fd]->setHasPendingMsg(false);
+						/* NOTE: */
+						std::cout << GREEN << "Message sent to client with fd: " << fd << CLEAR << std::endl;
+					}
 					if (events[i].events & (EPOLLRDHUP | EPOLLHUP | EPOLLERR))
 						disconnectClient(fd);
 				}

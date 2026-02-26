@@ -52,7 +52,10 @@ class Server
 		void	sendWelcomeMsg(int fdClient);
 		void	joinGeneralChannel(int fdClient);
 		std::string makePrefix(int fd);
-
+		void	handleWrite(int fd);
+		void	enableWrite(int fd);
+		void	disableWrite(int fd);
+		void	sendToChannel(const std::string &chanName, int excludeFd, const std::string &msg);
 
 		/* COMMANDS */
 		void sendMsgChangeNick(std::string newNick, int fdClient);

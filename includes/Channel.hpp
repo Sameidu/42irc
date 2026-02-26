@@ -37,6 +37,7 @@ class Channel
 		size_t getUserCount() const;
 		int getUserFd(const std::string &nick) const;
 		std::string getMode() const;
+		std::map<int, Client *> getUsers() const;
 
 		void setName(const std::string &name);
 		void setMaxUsers(const size_t &maxUsers);
@@ -64,6 +65,7 @@ class Channel
 		void disconnectUser(Client *client);
 		void broadcastMessage(int fd, const std::string &cmd, const std::string &user, const std::string &msg) const;
 		void broadcastMessageNochan(int fd, const std::string &cmd, const std::string &msg) const;
+		void broadcastSimple(int excludeFd, const std::string &fullMsg) const;
 };
 
 #endif 

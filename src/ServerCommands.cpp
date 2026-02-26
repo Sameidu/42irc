@@ -44,9 +44,12 @@ void Server::answerClient(int fdClient, int code, const std::string &target, con
 		response += " " + target;
 	response += " :" + msg + "\r\n";
 
-	std::cout << GREEN << response << CLEAR << std::endl;
-	if (send(fdClient, response.c_str(), response.size(), MSG_EOR) < 0)
-		throw std::runtime_error("Sending msg to client");
+	_clients[fdClient]->addMsg(response);
+	epoll_event ev;
+	ev.events = EPOLLIN | EPOLLOUT | EPOLLRDHUP;
+	ev.data.fd = fdClient;
+	if (epoll_ctl(_epollFd, EPOLL_CTL_MOD, fdClient, &ev) < 0)
+		throw std::runtime_error("Epoll MOD failed in answerClient");
 }
 
 
@@ -58,8 +61,11 @@ void Server::sendMsgToClient(int fd, const std::string &cmd, const std::string &
 	if (!msg.empty())
 		response += " :" + msg;
 	response += "\r\n";
-	if (send(fd, response.c_str(), response.size(), MSG_EOR) < 0)
-		throw std::runtime_error("Sending msg to client");
+	epoll_event ev;
+	ev.events = EPOLLIN | EPOLLOUT | EPOLLRDHUP;
+	ev.data.fd = fd;
+	if (epoll_ctl(_epollFd, EPOLL_CTL_MOD, fd, &ev) < 0)
+        throw std::runtime_error("Epoll MOD failed in sendMsgToClient");
 }
 
 void Server::msgClientToClient(int from, int to, const std::string &cmd, const std::string &msg) {
@@ -69,20 +75,20 @@ void Server::msgClientToClient(int from, int to, const std::string &cmd, const s
 	if (!msg.empty())
 		response += " :" + msg;
 	response += "\r\n";
-	if (send(to, response.c_str(), response.size(), MSG_EOR) < 0)
-		throw std::runtime_error("Sending msg to client");
+	epoll_event ev;
+	ev.events = EPOLLIN | EPOLLOUT | EPOLLRDHUP;
+	ev.data.fd = to;
+	if (epoll_ctl(_epollFd, EPOLL_CTL_MOD, to, &ev) < 0)
+        throw std::runtime_error("Epoll MOD failed in msgClientToClient");
 }
 
 void	Server::sendWelcomeMsg(int fdClient)
 {
 	Client& c = *_clients[fdClient];
 
-	answerClient(fdClient, RPL_WELCOME, "", "Welcome to the IRC network, " + c.getNickname());
-	
+	answerClient(fdClient, RPL_WELCOME, "", "Welcome to the IRC network, " + c.getNickname());	
     answerClient(fdClient, RPL_YOURHOST, "", "Your host is " + _serverName + ", running version " + _version);
-
     answerClient(fdClient, RPL_CREATED, "", "This server was created " + _creationDate);
-
     answerClient(fdClient, RPL_MYINFO, "", _serverName + " " + _version + " " + _chanModes);
 }
 

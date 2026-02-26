@@ -58,31 +58,31 @@ all: $(NAME)
 
 # Executable build
 $(NAME): $(OBJ)
-	@echo "$(PINK)✨ Linking executable...$(CLEAR)"
+	@echo -e "$(PINK)✨ Linking executable...$(CLEAR)"
 	$(CC) $(OBJ) $(CFLAGS) -o $(NAME)
-	@echo "$(GREEN)✅ Build successful!$(CLEAR)"
+	@echo -e "$(GREEN)✅ Build successful!$(CLEAR)"
 
 # Compiles each .cpp file into obj/.o
 $(OBJ_DIR)/%.o: %.cpp $(DEPS)
 	@mkdir -p $(OBJ_DIR)
-	@echo "$(BLUE)📦 Compiling $< -> $@$(CLEAR)"
+	@echo -e "$(BLUE)📦 Compiling $< -> $@$(CLEAR)"
 	$(CC) $(CFLAGS) -c $< -o $@
-	@echo "$(GREEN)✔ Done.$(CLEAR)"
+	@echo -e "$(GREEN)✔ Done.$(CLEAR)"
 
 # ============================
 # 🧼 CLEANING RULES
 # ============================
 
 clean:
-	@echo "$(YELLOW)🧹 Cleaning object files...$(CLEAR)"
+	@echo -e "$(YELLOW)🧹 Cleaning object files...$(CLEAR)"
 	@rm -rf $(OBJ_DIR)
-	@echo "$(GREEN)✔ Object files removed.$(CLEAR)"
+	@echo -e "$(GREEN)✔ Object files removed.$(CLEAR)"
 
 fclean: clean
-	@echo "$(YELLOW)🧽 Removing executable...$(CLEAR)"
+	@echo -e "$(YELLOW)🧽 Removing executable...$(CLEAR)"
 	@rm -rf $(NAME)
 	@make fclean -C bot
-	@echo "$(GREEN)✔ Executable removed.$(CLEAR)"
+	@echo -e "$(GREEN)✔ Executable removed.$(CLEAR)"
 
 re: fclean all
 
@@ -92,7 +92,7 @@ re: fclean all
 
 bonus: all
 	@make -C bot
-	@echo "$(BLUE)🤖 Bonus bot compiled!$(CLEAR)"
+	@echo -e "$(BLUE)🤖 Bonus bot compiled!$(CLEAR)"
 
 # ============================
 # 🚀 QUICK TEST RULE
@@ -101,7 +101,7 @@ PORT     ?= 6667
 PASS     ?= password
 
 test: re bonus
-	@echo "$(BLUE)🚀 Running server on port $(PORT) with password '$(PASS)'...$(CLEAR)"
+	@echo -e "$(BLUE)🚀 Running server on port $(PORT) with password '$(PASS)'...$(CLEAR)"
 	@./$(NAME) $(PORT) $(PASS)
 
 .PHONY: all clean fclean re test bonus

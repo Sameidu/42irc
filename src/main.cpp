@@ -3,7 +3,7 @@
 
 void	handleSignal(int signal) {
 	(void)signal;
-		std::cout << "\nManage Signal..." << std::endl;
+	std::cout << "\nManage Signal..." << std::endl;
 }
 
 void	runSignals() {

@@ -30,6 +30,10 @@ class Client
 		std::vector<Channel*>	_channels;
 		std::string				_ip;
 
+		std::string 			_finalMsg;
+		bool					_hasPendingMsg;
+		bool					_shouldDisconnect;
+
 	public:
 		Client(const int fd, sockaddr_in *clientAddr);
 		~Client();
@@ -50,10 +54,16 @@ class Client
 		void setRealname(const std::string &realname);
 		void setRegistrationState(RegistrationStatus st);
 		void setBufferMsgClient(const std::string &msg);
+		void setHasPendingMsg(bool hasPending);
 
     	void joinChannel(Channel* ch);
     	void leaveChannel(Channel* ch);
-
+		void addMsg(const std::string &msg);
+		std::string &getNextMsg();
+		void updateMsg(size_t sentBytes);
+		bool hasPendingMsg() const;
+		bool setShouldDisconnect(bool shouldDisconnect);
+		bool getShouldDisconnect() const;
 };
 
 #endif

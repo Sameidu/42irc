@@ -24,6 +24,7 @@
 # include <cstdio>
 # include <utility>
 # include <sstream>
+#include <netinet/tcp.h>
 
 // COLORS
 # define RED     "\033[91;1m"

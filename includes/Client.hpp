@@ -33,6 +33,7 @@ class Client
 		std::string 			_finalMsg;
 		bool					_hasPendingMsg;
 		bool					_shouldDisconnect;
+		bool					_isWriting;
 
 	public:
 		Client(const int fd, sockaddr_in *clientAddr);
@@ -64,6 +65,8 @@ class Client
 		bool hasPendingMsg() const;
 		bool setShouldDisconnect(bool shouldDisconnect);
 		bool getShouldDisconnect() const;
+		void setIsWriting(bool isWriting);
+		bool getIsWriting() const;
 };
 
 #endif

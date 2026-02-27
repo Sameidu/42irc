@@ -91,7 +91,9 @@ void	Server::sendWelcomeMsg(int fdClient)
 	answerClient(fdClient, RPL_WELCOME, "", "Welcome to the IRC network, " + c.getNickname());	
     answerClient(fdClient, RPL_YOURHOST, "", "Your host is " + _serverName + ", running version " + _version);
     answerClient(fdClient, RPL_CREATED, "", "This server was created " + _creationDate);
-    answerClient(fdClient, RPL_MYINFO, "", _serverName + " " + _version + " " + _chanModes);
+    //answerClient(fdClient, RPL_MYINFO, "", _serverName + " " + _version + " " + _chanModes);
+	std::string msg004 = ":" + _serverName + " 004 " + c.getNickname() + " " + _serverName + " " + _version + " " + _chanModes + "\r\n";
+	c.addMsg(msg004);
 }
 
 void	Server::joinGeneralChannel(int fdClient)
@@ -137,7 +139,6 @@ void Server::handleCommand(t_msg& msg, int fdClient)
 	std::map<std::string, FCmd>::iterator it = _fCommands.find(msg.command);
 	if (it != _fCommands.end()) 
 	{
-		std::cout << it->first << std::endl;
 		FCmd func = it->second;
 		(this->*func)(msg, fdClient);
 	} 

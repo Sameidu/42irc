@@ -49,19 +49,19 @@ bool Client::hasPendingMsg() const { return _hasPendingMsg; }
 std::string &Client::getNextMsg() { return _finalMsg; }
 
 void Client::addMsg(const std::string &msg) {
-	if (!_finalMsg.empty())
-		_finalMsg += "\r\n";
 	_finalMsg += msg;
-	setHasPendingMsg(true);
+	if (_finalMsg.size() > 10000)
+		_shouldDisconnect = true;
+	if (!_finalMsg.empty()) 
+		setHasPendingMsg(true);
 }
 
 void Client::updateMsg(size_t sentBytes) {
 	if (sentBytes >= _finalMsg.size()) {
 		_finalMsg.clear();
 		setHasPendingMsg(false);
-	} else {
+	} else
 		_finalMsg.erase(0, sentBytes);
-	}
 }
 
 bool Client::setShouldDisconnect(bool shouldDisconnect) {
@@ -70,6 +70,8 @@ bool Client::setShouldDisconnect(bool shouldDisconnect) {
 	return _shouldDisconnect;
 }
 
-bool Client::getShouldDisconnect() const {
-	return _shouldDisconnect;
-}
+bool Client::getShouldDisconnect() const { return _shouldDisconnect; }
+
+bool Client::getIsWriting() const { return _isWriting; }
+
+void Client::setIsWriting(bool isWriting) { _isWriting = isWriting; }

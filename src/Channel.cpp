@@ -89,6 +89,7 @@ void Channel::newChannelUser(Client *client) {
 	client->joinChannel(this);
 }
 
+// TODO: No esta funcionandp
 void Channel::disconnectUser(Client *client) {
 	if (_users.find(client->getFd()) == _users.end())
 		return ;
@@ -118,6 +119,8 @@ void Channel::disconnectUser(Client *client) {
 			std::string reponse = ":" + _users[_ownerFd]->getNickname() + "!" + _users[_ownerFd]->getUsername() + "@" + _users[_ownerFd]->GetIp();
 			reponse += " MODE " + _name + " +o " + _users[_ownerFd]->getNickname() + "\r\n";
 			_users[_ownerFd]->addMsg(reponse);
+			std::cout << "New owner of channel " << _name << ": " << _users[_ownerFd]->getNickname() << std::endl;
+			// TODO: Esto no esta funcionando
 			broadcastMessage(client->getFd(), "MODE", _users[_ownerFd]->getNickname(), "+o " + _users[_ownerFd]->getNickname());
 		}
 	}
@@ -165,36 +168,6 @@ void Channel::removeAdminList(Client *client) {
 	_admins.erase(client->getFd());
 	_invited.erase(client->getFd());
 }
-
-// void Channel::broadcastMessageNochan(int fd, const std::string &cmd, const std::string &msg) const {
-// 	std::string prefix = ":" + _users.at(fd)->getNickname() + "!" + _users.at(fd)->getUsername() + "@" + _users.at(fd)->GetIp();
-// 	std::string message = prefix + " " + cmd;
-	
-// 	if (!msg.empty())
-// 		message += " :" + msg;
-// 	message += "\r\n";
-// 	for (std::map<int, Client *>::const_iterator it = _users.begin(); it != _users.end(); ++it) {
-// 		if (it->first != fd)
-// 			if (send(it->first, message.c_str(), message.size(), MSG_EOR) < 0)
-// 				throw std::runtime_error("Sending msg to client");
-// 	}
-// }
-
-// void Channel::broadcastMessage(int fd, const std::string &cmd, const std::string &user, const std::string &msg) const {
-// 	std::string prefix = ":" + _users.at(fd)->getNickname() + "!" + _users.at(fd)->getUsername() + "@" + _users.at(fd)->GetIp();
-// 	std::string message = prefix + " " + cmd + " " + _name;
-	
-// 	if (!user.empty())
-// 		message += " " + user;
-// 	if (!msg.empty())
-// 		message += " :" + msg;
-// 	message += "\r\n";
-// 	for (std::map<int, Client *>::const_iterator it = _users.begin(); it != _users.end(); ++it) {
-// 		if (it->first != fd)
-// 			if (send(it->first, message.c_str(), message.size(), MSG_EOR) < 0)
-// 				throw std::runtime_error("Sending msg to client");
-// 	}
-// }
 
 std::string Channel::broadcastMessageNochan(int fd, const std::string &cmd, const std::string &msg) const {
     std::string prefix = ":" + _users.at(fd)->getNickname() + "!" + 

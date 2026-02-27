@@ -22,7 +22,8 @@ void Server::CmPart(t_msg &msg, int fd) {
 			}
 			std::string reason = (!msg.trailing.empty()) ? msg.trailing : _clients[fd]->getNickname() + " has left " + *it;
 			sendMsgToClient(fd, "PART", *it, "Leaving... ");
-			_channel[*it]->broadcastMessage(fd, "PART", "", reason);
+			std::string message = _channel[*it]->broadcastMessage(fd, "PART", "", reason);
+			sendToChannel(*it, fd, message);
 			_channel[*it]->disconnectUser(_clients[fd]);
 			if (_channel[*it]->getUserCount() <= 1) {
 				if (_channel[*it]->hasUser("Bot"))

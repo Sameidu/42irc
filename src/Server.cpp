@@ -11,8 +11,6 @@ Server::Server( const int &port, const std::string &password )
 Server::~Server() {
 	for (std::map<int, Client *>::iterator it = _clients.begin(); it != _clients.end(); ++it) {
 		if (it->second) {
-			/*NOTE: */
-			std::cout << "Closing client with fd: " << it->second->getFd() << std::endl;
 			if (_epollFd >= 0)
 				epoll_ctl(_epollFd, EPOLL_CTL_DEL, it->second->getFd(), NULL);
 			close(it->second->getFd());
@@ -30,9 +28,6 @@ Server::~Server() {
 		close(_socketFd);
 	if (_epollFd >= 0)
 		close(_epollFd);
-
-	/*NOTE: */
-	std::cout << "Server closed" << std::endl;
 }
 
 void Server::init() {
@@ -45,6 +40,10 @@ void Server::init() {
 	int	opt = 1;
 	if (setsockopt(_socketFd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0)
 		throw std::runtime_error("When setting SO_REUSEADDR");
+
+	int nodelay = 1;
+	if (setsockopt(_socketFd, IPPROTO_TCP, TCP_NODELAY, &nodelay, sizeof(nodelay)) < 0)
+    	throw std::runtime_error("When setting TCP_NODELAY");
 
 	if (!setNonBlocking(_socketFd))
 		throw std::runtime_error("Setting flags to non blocking");
@@ -106,6 +105,9 @@ void	Server::connectNewClient()
 	if (!setNonBlocking(client_fd))
 		throw std::runtime_error("Setting flags to non blocking for client");
 
+	int nodelay = 1;
+    setsockopt(client_fd, IPPROTO_TCP, TCP_NODELAY, &nodelay, sizeof(nodelay));
+
 	Client	*auxClient = new Client(client_fd, &client_addr);
 	epoll_event ev;
 	ev.events = EPOLLIN | EPOLLRDHUP;
@@ -117,9 +119,6 @@ void	Server::connectNewClient()
 
 t_msg	Server::parseMsg(std::string fullMsg)
 {
-	/* NOTE: */
-	std::cout << "FULL MSG RECIVED:" << BLUE << fullMsg << CLEAR << std::endl;
-
 	while (!fullMsg.empty() && (fullMsg[fullMsg.size() - 1] == '\r' || fullMsg[fullMsg.size() - 1] == '\n'))
     	fullMsg.resize(fullMsg.size() - 1);
 
@@ -194,31 +193,25 @@ t_msg	Server::parseMsg(std::string fullMsg)
 
 void	Server::readMsg(int fd)
 {
-	/* NOTE: */
-	std::cout << "Event received from fd: " << fd << std::endl;
-
-	char	msg[MAX_BYTES_MSG];
-	std::memset(msg, 0, sizeof(msg));
-
-	int bytes_recived =  recv(fd, &msg, MAX_BYTES_MSG, 0);
-
-	if (bytes_recived < 0)
-		throw std::runtime_error("On recv()");
-
-    std::string aux = _clients[fd]->getBufferMsgClient();
-    aux.append(msg, bytes_recived);
-    _clients[fd]->setBufferMsgClient(aux);
-
-    std::string& buffer = _clients[fd]->getBufferMsgClient();
-    std::size_t pos;
-
-    while ((pos = buffer.find("\n")) != std::string::npos)
+	char buf[MAX_BYTES_MSG];
+    while (true) {
+        int bytes = recv(fd, buf, sizeof(buf), 0);
+        if (bytes > 0) {
+            _clients[fd]->getBufferMsgClient().append(buf, bytes);
+        } else if (bytes == 0) {
+            disconnectClient(fd);
+            return;
+        } else {
+            if (errno != EAGAIN && errno != EWOULDBLOCK)
+                disconnectClient(fd);
+            break;
+        }
+    }
+	size_t pos;
+    while ((pos = _clients[fd]->getBufferMsgClient().find("\n")) != std::string::npos)
     {
-        std::string fullMsg = buffer.substr(0, pos);
-        buffer.erase(0, pos + 1);
-
-		/* NOTE: */
-        std::cout << YELLOW << "MSG: " << fullMsg << CLEAR << std::endl;
+        std::string fullMsg = _clients[fd]->getBufferMsgClient().substr(0, pos);
+        _clients[fd]->getBufferMsgClient().erase(0, pos + 1);
 
         t_msg parsedMsg = parseMsg(fullMsg);
 		handleCommand(parsedMsg, fd);
@@ -252,10 +245,15 @@ void Server::disconnectClient(int fd) {
 }
 
 void Server::enableWrite(int fd) {
+	if (_clients[fd]->getIsWriting()) 
+		return;
     epoll_event ev;
     ev.events = EPOLLIN | EPOLLOUT | EPOLLRDHUP;
     ev.data.fd = fd;
-    epoll_ctl(_epollFd, EPOLL_CTL_MOD, fd, &ev);
+    if (epoll_ctl(_epollFd, EPOLL_CTL_MOD, fd, &ev) == 0)
+		_clients[fd]->setIsWriting(true);
+	else
+		throw std::runtime_error("Epoll MOD failed in enableWrite");
 }
 
 void Server::disableWrite(int fd) {
@@ -263,34 +261,37 @@ void Server::disableWrite(int fd) {
     ev.events = EPOLLIN | EPOLLRDHUP;
     ev.data.fd = fd;
     epoll_ctl(_epollFd, EPOLL_CTL_MOD, fd, &ev);
+    _clients[fd]->setIsWriting(false);
 }
 
 void Server::handleWrite(int fd) {
-    if (_clients.find(fd) == _clients.end())
-        return;
-
     Client *client = _clients[fd];
-    const std::string &msg = client->getNextMsg();
-	std::cout << "Attempting to send message to client fd " << fd << ": " << BLUE << msg << CLEAR;
-    if (!msg.empty()) {
-        ssize_t bytes_sent = send(fd, msg.c_str(), msg.size(), 0);
+    
+    if (!client->hasPendingMsg()) {
+        disableWrite(fd);
+        if (client->getShouldDisconnect())
+            disconnectClient(fd);
+        return;
+    }
 
-        if (bytes_sent > 0) {
-            client->updateMsg(static_cast<size_t>(bytes_sent));
-            if (!client->hasPendingMsg())
-                disableWrite(fd);
-        } 
-        else if (bytes_sent < 0) {
-            if (errno != EAGAIN && errno != EWOULDBLOCK) {
+    const std::string &msg = client->getNextMsg();
+    ssize_t bytes_sent = send(fd, msg.c_str(), msg.size(), MSG_DONTWAIT);
+	std::cout << "Enviando: [" << msg << "]" << std::endl;
+    if (bytes_sent > 0) {
+        client->updateMsg(static_cast<size_t>(bytes_sent));
+        
+        if (!client->hasPendingMsg()) {
+            disableWrite(fd);
+            if (client->getShouldDisconnect()) {
                 disconnectClient(fd);
                 return;
             }
         }
-    } else {
-        disableWrite(fd);
-    }
-    if (!client->hasPendingMsg() && client->getShouldDisconnect()) {
-        disconnectClient(fd);
+    } 
+    else if (bytes_sent < 0) {
+        if (errno != EAGAIN && errno != EWOULDBLOCK) {
+            disconnectClient(fd);
+        }
     }
 }
 
@@ -373,7 +374,6 @@ void Server::run() {
 	epoll_event events[MAX_EVENTS];
 
 	while (_running) {
-		std::cout << PINK << "Waiting for events..." << CLEAR << std::endl << std::endl;
 		int numEvents = epoll_wait(_epollFd, events, MAX_EVENTS, -1);
 		if (numEvents < 0) {
 			if (errno == EINTR) {
@@ -395,9 +395,9 @@ void Server::run() {
 					if (events[i].events & EPOLLIN)
 						readMsg(fd);
 					if (events[i].events & EPOLLOUT) {
-						handleWrite(fd);
 						if (_clients.find(fd) == _clients.end())
 							continue;
+						handleWrite(fd);
 						epoll_event ev;
 						ev.events = EPOLLIN | EPOLLRDHUP;
 						ev.data.fd = fd;
